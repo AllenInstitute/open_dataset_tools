@@ -1,6 +1,7 @@
 import os
 import hashlib
 import json
+import copy
 import aws_utils
 
 
@@ -151,3 +152,83 @@ def get_section_metadata(section_id, session=None):
         metadata = json.load(in_file)
 
     return metadata
+
+
+class SectionDataSet(object):
+
+    def __init__(self, section_id, session=None):
+        """
+        Load and store the metadata for the section_data_set specified
+        by section_id. Use the boto3 session provided as a kwarg, or
+        open a session using credentials found in accessKeys.csv
+        """
+        self.section_id = section_id
+        if session is None:
+            session = aws_utils.get_boto3_session()
+        self.session = session
+        self.metadata = get_section_metadata(section_id, session=session)
+
+        # remove section images and construct a dict keyed on image name
+        tmp_section_images = self.metadata.pop('section_images')
+
+        self.section_images = {}
+        self.tissue_index_to_img = {}
+        self.subimg_to_img = {}
+        for img in tmp_section_images:
+            fname = img['image_file_name']
+            self.section_images[fname] = img
+            self.tissue_index_to_img[img['section']] = fname
+            self.subimg_to_img[img['id']] = fname
+
+    def image_metadata_from_tissue_index(self, tissue_index):
+        """
+        Return the metadata of the section_image associated with the
+        specified tissue_index.
+
+        Returns None if an invalid tissue_index is specified
+        """
+        if tissue_index not in self.tissue_index_to_img:
+            print("tissue_index %d does not exist in section_data_set_%d" %
+                   (tissue_index, self.section_id))
+            return None
+
+        fname = self.tissue_index_to_img[tissue_index]
+        return copy.deepcopy(self.section_images[fname])
+
+    def image_metadata_from_sub_image(self, sub_image):
+        """
+        Return the metadata of the section_image associated with the
+        specified subimage ID
+
+        Returns None if an invalid subimage ID is specified
+        """
+        if sub_image not in self.subimg_to_img:
+            print("sub_image %d does not exst in section_data_set_%d" %
+                  (sub_image, self.section_id))
+
+            return None
+
+        fname = self.subimg_to_img
+        return copy.deepcopy(self.section_images[fname])
+
+    def _download_img(self, fname, downsample, local_filename, clobber=False):
+
+        if os.path.exists(local_filename):
+            if not os.path.isfile(local_filename):
+                print('%s already exists but is not a file' % local_filename)
+                return False
+            if not clobber:
+                print('%s already exists; re-run with clobber=True to overwrite')
+                return False
+
+        downsample_key = 'downsample_%d' % downsample
+        if downsample_key not in self.section_images[fname].keys():
+            print("%d is not a valid downsampling tier for %s" % (downsample, fname))
+        aws_key = 'section_data_set_%d/%s/%s' % (self.section_id, downsample_key, fname)
+
+        s3 = self.session.client('s3')
+        s3.download_file(Bucket='allen-mouse-brain-atlas',
+                         Key=aws_key,
+                         Filename=local_filename)
+
+        return True
