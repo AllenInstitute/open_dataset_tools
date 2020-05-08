@@ -47,6 +47,38 @@ def _get_tmp_dir():
 
     return tmp_dir
 
+def _get_aws_file(aws_key, local_filename, session,
+                  bucket_name='allen-mouse-brain-atlas'):
+
+    """
+    Download the AWS file specified by bucket_name:aws_key to
+    local_filename, but only if necessary
+    """
+
+    target_md5 = _get_aws_md5(aws_key, session, bucket_name=bucket_name)
+    must_download = False
+    if not os.path.exists(local_filename):
+        must_download = True
+    else:
+        if not os.path.isfile(local_filename):
+            raise RuntimeError('\n%s\nexists but is not a file' % local_filename)
+
+        if not _compare_md5(local_filename, target_md5):
+            must_download = True
+
+    if must_download:
+        print('downloading section_data_sets.json')
+        s3 = session.client('s3')
+        s3.download_file(Bucket=bucket_name,
+                         Key=aws_key,
+                         Filename=local_filename)
+
+        if not _compare_md5(local_filename, target_md5):
+            msg = '\nDownloaded section_data_sets.json; '
+            msg += 'md5 checksum != %s\n' % target_md5
+            raise RuntimeError(msg)
+
+    return None
 
 def get_atlas_metadata(session=None):
     """
@@ -74,31 +106,8 @@ def get_atlas_metadata(session=None):
         session = aws_utils.get_boto3_session()
 
     bucket_name = 'allen-mouse-brain-atlas'
-
-    target_md5 = _get_aws_md5('section_data_sets.json',
-                              session)
-
-    must_download = False
-    if not os.path.exists(file_name):
-        must_download = True
-    else:
-        if not os.path.isfile(file_name):
-            raise RuntimeError('\n%s\nexists but is not a file' % file_name)
-
-        if not _compare_md5(file_name, target_md5):
-            must_download = True
-
-    if must_download:
-        print('downloading section_data_sets.json')
-        s3 = session.client('s3')
-        s3.download_file(Bucket=bucket_name,
-                         Key='section_data_sets.json',
-                         Filename=file_name)
-
-        if not _compare_md5(file_name, target_md5):
-            msg = '\nDownloaded section_data_sets.json; '
-            msg += 'md5 checksum != %s\n' % target_md5
-            raise RuntimeError(msg)
+    _get_aws_file('section_data_sets.json', file_name, session,
+                  bucket_name=bucket_name)
 
     with open(file_name, 'rb') as in_file:
         metadata = json.load(in_file)
