@@ -30,7 +30,7 @@ def get_atlas_metadata(session=None):
 
     Returns
     -------
-    A dict containing the metadata for the atlas.
+    A list of dicts containing the metadata for the atlas.
     This is the result of running json.load on section_data_sets.json
     """
 
