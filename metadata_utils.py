@@ -14,7 +14,7 @@ def _get_aws_md5(fname, session, bucket_name='allen-mouse-brain-atlas'):
     obj_list = s3.list_objects(Bucket=bucket_name,
                                Prefix=fname)['Contents']
     if len(obj_list) != 1:
-        msg = '\nquerying bucket for section_data_sets.json '
+        msg = '\nquerying bucket for %s ' % fname
         msg += 'returned %d results\n' % len(obj_list)
         raise RuntimeError(msg)
 
