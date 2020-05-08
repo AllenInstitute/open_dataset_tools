@@ -80,6 +80,7 @@ def _get_aws_file(aws_key, local_filename, session,
 
     return None
 
+
 def get_atlas_metadata(session=None):
     """
     Load the metadata for the entire atlas into memory.
@@ -148,4 +149,5 @@ def get_section_metadata(section_id, session=None):
 
     with open(file_name, 'rb') as in_file:
         metadata = json.load(in_file)
+
     return metadata
