@@ -3,6 +3,24 @@ import hashlib
 import json
 import aws_utils
 
+
+def _get_aws_md5(fname, session, bucket_name='allen-mouse-brain-atlas'):
+    """
+    Get and return the md5 checksum of a file in AWS
+    """
+    s3 = session.client('s3')
+    # get the md5sum of the section_data_sets.json file
+    # to determine if the file must be downloaded
+    obj_list = s3.list_objects(Bucket=bucket_name,
+                               Prefix=fname)['Contents']
+    if len(obj_list) != 1:
+        msg = '\nquerying bucket for section_data_sets.json '
+        msg += 'returned %d results\n' % len(obj_list)
+        raise RuntimeError(msg)
+
+    return obj_list[0]['ETag'].replace('"','')
+
+
 def _compare_md5(fname, target):
     """
     Compare the md5 checksum of the file specified by fname to the
@@ -57,18 +75,10 @@ def get_atlas_metadata(session=None):
 
     bucket_name = 'allen-mouse-brain-atlas'
 
-    s3 = session.client('s3')
-    # get the md5sum of the section_data_sets.json file
-    # to determine if the file must be downloaded
-    obj_list = s3.list_objects(Bucket=bucket_name,
-                               Prefix='section_data_sets.json')['Contents']
-    if len(obj_list) != 1:
-        msg = '\nquerying bucket for section_data_sets.json '
-        msg += 'returned %d results\n' % len(obj_list)
-        raise RuntimeError(msg)
+    target_md5 = _get_aws_md5('section_data_sets.json',
+                              session)
 
     must_download = False
-    target_md5 = obj_list[0]['ETag'].replace('"','')
     if not os.path.exists(file_name):
         must_download = True
     else:
@@ -80,6 +90,7 @@ def get_atlas_metadata(session=None):
 
     if must_download:
         print('downloading section_data_sets.json')
+        s3 = session.client('s3')
         s3.download_file(Bucket=bucket_name,
                          Key='section_data_sets.json',
                          Filename=file_name)
