@@ -67,7 +67,7 @@ def _get_aws_file(aws_key, local_filename, session,
             must_download = True
 
     if must_download:
-        print('downloading section_data_sets.json')
+        print('downloading %s' % aws_key)
         s3 = session.client('s3')
         s3.download_file(Bucket=bucket_name,
                          Key=aws_key,
