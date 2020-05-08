@@ -16,6 +16,20 @@ def _compare_md5(fname, target):
     return md5_obj.hexdigest()==target
 
 
+def _get_tmp_dir():
+    """
+    Check the validity of and return the name of the tmp/
+    sub directory of the directory containing metadata_utils.py
+    """
+    tmp_dir = os.path.dirname(os.path.abspath(__file__))
+    tmp_dir = os.path.join(tmp_dir, 'tmp')
+
+    if os.path.exists(tmp_dir) and not os.path.isdir(tmp_dir):
+        raise RuntimeError('\n%s\nexists but is not a dir' % tmp_dir)
+
+    return tmp_dir
+
+
 def get_atlas_metadata(session=None):
     """
     Load the metadata for the entire atlas into memory.
@@ -34,11 +48,7 @@ def get_atlas_metadata(session=None):
     This is the result of running json.load on section_data_sets.json
     """
 
-    tmp_dir = os.path.dirname(os.path.abspath(__file__))
-    tmp_dir = os.path.join(tmp_dir, 'tmp')
-
-    if os.path.exists(tmp_dir) and not os.path.isdir(tmp_dir):
-        raise RuntimeError('\n%s\nexists but is not a dir' % tmp_dir)
+    tmp_dir = _get_tmp_dir()
 
     file_name = os.path.join(tmp_dir, 'section_data_sets.json')
 
