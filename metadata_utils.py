@@ -113,3 +113,39 @@ def get_atlas_metadata(session=None):
         metadata = json.load(in_file)
 
     return metadata
+
+
+def get_section_metadata(section_id, session=None):
+    """
+    Get the dict representing the metadata for a specific image series.
+
+    Parameters
+    ----------
+    section_id is an integer representing the section whose metadata should be
+    loaded
+
+    session is a boto3.Session. If None, this method will try to create one
+    looking for credentialsi n accessKeys.csv
+
+    Returns
+    -------
+    A dict containing the metadata for the specified Session.
+
+    Note: this method will download the json file containing the metadata
+    into the tmp/ sub directory of the directory containing metadata_utils.py
+    """
+    tmp_dir = _get_tmp_dir()
+    if session is None:
+        session = aws_utils.get_session()
+
+    file_name = os.path.join(tmp_dir,
+                            'section_data_set_%d_metadata.json' % section_id)
+
+    aws_key = 'section_data_set_%d/section_data_set.json' % section_id
+
+    _get_aws_file(aws_key, file_name, session,
+                  bucket_name='allen-mouse-brain-atlas')
+
+    with open(file_name, 'rb') as in_file:
+        metadata = json.load(in_file)
+    return metadata
