@@ -232,3 +232,23 @@ class SectionDataSet(object):
                          Filename=local_filename)
 
         return True
+
+    def download_image_from_tissue_index(self, tissue_index, downsample,
+                                         local_filename, clobber=False):
+
+        if tissue_index not in self.tissue_index_to_img:
+            print("tissue_index %d does not exist in section_data_set_%d" %
+                   (tissue_index, self.section_id))
+            return False
+        fname = self.tissue_index_to_img[tissue_index]
+        return self._download_img(fname, downsample, local_filename, clobber=clobber)
+
+    def download_image_from_sub_image(self, sub_image, downsample,
+                                      local_filename, clobber=False):
+
+        if sub_image not in self.subimg_to_img:
+            print("sub_image %d does not exst in section_data_set_%d" %
+                  (sub_image, self.section_id))
+            return False
+        fname = self.sub_img_to_img[sub_image]
+        return self._download_img(fname, downsample, local_filename, clobber=clobber)
