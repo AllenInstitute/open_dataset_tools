@@ -21,6 +21,8 @@ class MetadataTestCase(unittest.TestCase):
         cls.tmp_dir = 'test_tmp'
         cls.cleanUpTmp()
         cls.session = aws_utils.get_boto3_session()
+        mu.get_section_metadata(275693, session=cls.session,
+                                tmp_dir=cls.tmp_dir)
 
     @classmethod
     def tearDownClass(cls):
