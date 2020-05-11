@@ -82,7 +82,7 @@ def _get_aws_file(aws_key, local_filename, session,
     return None
 
 
-def get_atlas_metadata(session=None):
+def get_atlas_metadata(session=None, tmp_dir=None):
     """
     Load the metadata for the entire atlas into memory.
     If you have not already downloaded this file, it will
@@ -94,13 +94,19 @@ def get_atlas_metadata(session=None):
     session is a boto3.Session. If None, this method will try
     to open a session using credentials found in accessKeys.csv
 
+    tmp_dir is the directory to which temporary data should
+    be downloaded. If None, then the data will be downloaded
+    tmp/ in the directory where metadata_utils.py is
+    (Default: None).
+
     Returns
     -------
     A list of dicts containing the metadata for the atlas.
     This is the result of running json.load on section_data_sets.json
     """
 
-    tmp_dir = _get_tmp_dir()
+    if tmp_dir is None:
+        tmp_dir = _get_tmp_dir()
 
     file_name = os.path.join(tmp_dir, 'section_data_sets.json')
 
@@ -117,7 +123,7 @@ def get_atlas_metadata(session=None):
     return metadata
 
 
-def get_section_metadata(section_id, session=None):
+def get_section_metadata(section_id, session=None, tmp_dir=None):
     """
     Get the dict representing the metadata for a specific image series.
 
@@ -129,6 +135,11 @@ def get_section_metadata(section_id, session=None):
     session is a boto3.Session. If None, this method will try to create one
     looking for credentialsi n accessKeys.csv
 
+    tmp_dir is the directory to which temporary data should
+    be downloaded. If None, then the data will be downloaded
+    tmp/ in the directory where metadata_utils.py is
+    (Default: None).
+
     Returns
     -------
     A dict containing the metadata for the specified Session.
@@ -136,7 +147,9 @@ def get_section_metadata(section_id, session=None):
     Note: this method will download the json file containing the metadata
     into the tmp/ sub directory of the directory containing metadata_utils.py
     """
-    tmp_dir = _get_tmp_dir()
+    if tmp_dir is None:
+        tmp_dir = _get_tmp_dir()
+
     if session is None:
         session = aws_utils.get_session()
 
