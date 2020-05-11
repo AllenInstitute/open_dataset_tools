@@ -1,0 +1,53 @@
+import os
+import hashlib
+import aws_utils
+import metadata_utils as mu
+import unittest
+
+class MetadataTestCase(unittest.TestCase):
+
+    @classmethod
+    def cleanUpTmp(cls):
+        # clean out tmp_test
+        tmp_file_list = os.listdir(cls.tmp_dir)
+        for fname in tmp_file_list:
+            if fname.startswith('.'):
+                continue
+            full_name = os.path.join(cls.tmp_dir, fname)
+            os.unlink(full_name)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp_dir = 'test_tmp'
+        cls.cleanUpTmp()
+        cls.session = aws_utils.get_boto3_session()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.cleanUpTmp()
+
+    def test_atlas_metadata(self):
+        """
+        Test that we can download the global section_data_sets.json
+        file. Compare its md5 checksum to a hard-coded value taken
+        from a verified copy that was downloaded from S3 by hand.
+        """
+        mu.get_atlas_metadata(session=self.session,
+                              tmp_dir=self.tmp_dir)
+
+        fname = os.path.join(self.tmp_dir, 'section_data_sets.json')
+
+        if not os.path.exists(os.path.join(fname)):
+            raise RuntimeError("Failed to download section_data_sets.json")
+
+        md5_obj = hashlib.md5()
+        with open(os.path.join(fname), 'rb') as in_file:
+            for line in in_file:
+                md5_obj.update(line)
+        checksum = md5_obj.hexdigest()
+        self.assertEqual(checksum,
+                         '2c974e2be3a30a4d923f47dd4a7fde72')
+
+
+if __name__ == "__main__":
+    unittest.main()
