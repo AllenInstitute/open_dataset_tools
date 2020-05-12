@@ -30,7 +30,9 @@ class MetadataTestCase(unittest.TestCase):
         cls.tmp_dir = 'test_tmp'
         cls.cleanUpTmp()
         cls.session = aws_utils.get_boto3_session()
-        mu.get_section_metadata(275693, session=cls.session,
+        cls.example_section_id = 275693
+        mu.get_section_metadata(cls.example_section_id,
+                                session=cls.session,
                                 tmp_dir=cls.tmp_dir)
 
     @classmethod
