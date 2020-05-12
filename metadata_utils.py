@@ -186,7 +186,7 @@ class SectionDataSet(object):
         by section_id. Use the boto3 session provided as a kwarg, or
         open a session using credentials found in accessKeys.csv
         """
-        sef.tmp_dir=tmp_dir
+        self.tmp_dir=tmp_dir
         self.section_id = section_id
         if session is None:
             session = aws_utils.get_boto3_session()
@@ -203,7 +203,7 @@ class SectionDataSet(object):
         for img in tmp_section_images:
             fname = img['image_file_name']
             self.section_images[fname] = img
-            self.tissue_index_to_img[img['section']] = fname
+            self.tissue_index_to_img[img['section_number']] = fname
             self.subimg_to_img[img['id']] = fname
 
     def image_metadata_from_tissue_index(self, tissue_index):
