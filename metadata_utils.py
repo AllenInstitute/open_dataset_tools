@@ -247,6 +247,26 @@ class SectionDataSet(object):
             self.section_images[fname] = img
             self.tissue_index_to_img[img['section_number']] = fname
             self.subimg_to_img[img['id']] = fname
+        self._tissue_indices = list(self.tissue_index_to_img.keys())
+        self._tissue_indices.sort()
+        self._subimg_ids = list(self.subimg_to_img.keys())
+        self._subimg_ids.sort()
+
+    @property
+    def tissue_indices(self):
+        """
+        Return a sorted list of all of the tissue index values
+        available for the section_data_set
+        """
+        return self._tissue_indices
+
+    @property
+    def sub_image_ids(self):
+        """
+        Return a sorted list of all the sub-image ID values
+        for the section_data_set
+        """
+        return self._subimg_ids
 
     def image_metadata_from_tissue_index(self, tissue_index):
         """

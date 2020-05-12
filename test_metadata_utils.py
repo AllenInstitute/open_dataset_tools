@@ -506,6 +506,28 @@ class SectionDataSetTestCase(unittest.TestCase):
 
         shutil.rmtree(tiff_name)
 
+    def test_subimg_id_and_tissue_dex(self):
+        """
+        Test the contents of SectionDataSet.sub_image_ids
+        and SectionDataSet.tissue_indices
+        """
+        dataset = mu.SectionDataSet(self.example_section_id,
+                                    session=self.session,
+                                    tmp_dir=self.tmp_dir)
+
+        control = [102000002, 102000006,
+                   102000008, 102000010, 102000012, 102000014,
+                   102000016, 102000018, 102000020, 102000022,
+                   102000024, 102000026, 102000028, 102000032,
+                   102000034, 102000036, 102000038]
+
+        self.assertEqual(dataset.sub_image_ids, control)
+
+        control = [10, 26, 34, 42, 50, 58, 66, 74, 82, 90, 98,
+                   106, 114, 130, 138, 146, 154]
+
+        self.assertEqual(dataset.tissue_indices, control)
+
 
 if __name__ == "__main__":
     unittest.main()
