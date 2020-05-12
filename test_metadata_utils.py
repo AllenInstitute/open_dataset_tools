@@ -48,8 +48,10 @@ class MetadataTestCase(unittest.TestCase):
         file. Compare its md5 checksum to a hard-coded value taken
         from a verified copy that was downloaded from S3 by hand.
         """
-        mu.get_atlas_metadata(session=self.session,
-                              tmp_dir=self.tmp_dir)
+        metadata = mu.get_atlas_metadata(session=self.session,
+                                         tmp_dir=self.tmp_dir)
+
+        self.assertIsInstance(metadata, list)
 
         fname = os.path.join(self.tmp_dir, 'section_data_sets.json')
 
@@ -71,9 +73,11 @@ class MetadataTestCase(unittest.TestCase):
         against a hard-coded md5 checksum
         """
         section_id = 99
-        mu.get_section_metadata(section_id=section_id,
-                                session=self.session,
-                                tmp_dir=self.tmp_dir)
+        metadata = mu.get_section_metadata(section_id=section_id,
+                                           session=self.session,
+                                           tmp_dir=self.tmp_dir)
+
+        self.assertIsInstance(metadata, dict)
 
         fname = os.path.join(self.tmp_dir,
                              'section_data_set_%d_metadata.json' % section_id)
