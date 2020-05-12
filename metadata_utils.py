@@ -231,13 +231,13 @@ class SectionDataSet(object):
         Returns None if an invalid subimage ID is specified
         """
         if sub_image not in self.subimg_to_img:
-            warnings.warng("sub_image %d does not exist "
-                           "in section_data_set_%d" %
-                           (sub_image, self.section_id))
+            warnings.warn("sub_image %d does not exist "
+                          "in section_data_set_%d" %
+                          (sub_image, self.section_id))
 
             return None
 
-        fname = self.subimg_to_img
+        fname = self.subimg_to_img[sub_image]
         return copy.deepcopy(self.section_images[fname])
 
     def _download_img(self, fname, downsample, local_filename, clobber=False):
