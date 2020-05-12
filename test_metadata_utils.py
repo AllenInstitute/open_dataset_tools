@@ -66,6 +66,7 @@ class MetadataTestCase(unittest.TestCase):
         self.assertEqual(checksum,
                          '2c974e2be3a30a4d923f47dd4a7fde72')
 
+        os.unlink(fname)
 
     def test_section_metadata(self):
         """
@@ -93,6 +94,7 @@ class MetadataTestCase(unittest.TestCase):
         self.assertEqual(checksum,
                          'e8eff384bb39cc981f93bad62e6fad02')
 
+        os.unlink(fname)
 
 if __name__ == "__main__":
     unittest.main()
