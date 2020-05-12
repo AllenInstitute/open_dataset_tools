@@ -151,7 +151,7 @@ def get_section_metadata(section_id, session=None, tmp_dir=None):
         tmp_dir = _get_tmp_dir()
 
     if session is None:
-        session = aws_utils.get_session()
+        session = aws_utils.get_boto3_session()
 
     file_name = os.path.join(tmp_dir,
                             'section_data_set_%d_metadata.json' % section_id)
