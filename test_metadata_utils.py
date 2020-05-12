@@ -163,6 +163,13 @@ class SectionDataSetTestCase(unittest.TestCase):
             control_metadata = json.load(in_file)
         self.assertEqual(metadata, control_metadata)
 
+        # try loading a bad value
+        with self.assertWarns(UserWarning) as bad_tissue:
+            metadata = dataset.image_metadata_from_tissue_index(999)
+        self.assertIsNone(metadata)
+        #print(bad_tissue.warning.args)
+        self.assertIn("tissue_index 999 does not exist",
+                      bad_tissue.warning.args[0])
 
 if __name__ == "__main__":
     unittest.main()
