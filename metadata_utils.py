@@ -252,7 +252,7 @@ class SectionDataSet(object):
                 return False
 
         downsample_key = 'downsample_%d' % downsample
-        if downsample_key not in self.section_images[fname].keys():
+        if downsample_key not in self.section_images[fname]['downsampling'].keys():
             warnings.warn("%d is not a valid downsampling tier for %s"
                           % (downsample, fname))
             return False
