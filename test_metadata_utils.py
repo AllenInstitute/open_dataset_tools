@@ -52,6 +52,9 @@ class MetadataTestCase(unittest.TestCase):
                                          tmp_dir=self.tmp_dir)
 
         self.assertIsInstance(metadata, list)
+        self.assertEqual(len(metadata), 26078)
+        for obj in metadata:
+            self.assertIsInstance(obj, dict)
 
         fname = os.path.join(self.tmp_dir, 'section_data_sets.json')
 
