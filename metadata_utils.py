@@ -2,6 +2,7 @@ import os
 import hashlib
 import json
 import copy
+import warnings
 import aws_utils
 
 
@@ -214,8 +215,9 @@ class SectionDataSet(object):
         Returns None if an invalid tissue_index is specified
         """
         if tissue_index not in self.tissue_index_to_img:
-            print("tissue_index %d does not exist in section_data_set_%d" %
-                   (tissue_index, self.section_id))
+            warnings.warn("tissue_index %d does not "
+                          "exist in section_data_set_%d" %
+                          (tissue_index, self.section_id))
             return None
 
         fname = self.tissue_index_to_img[tissue_index]
@@ -229,8 +231,9 @@ class SectionDataSet(object):
         Returns None if an invalid subimage ID is specified
         """
         if sub_image not in self.subimg_to_img:
-            print("sub_image %d does not exst in section_data_set_%d" %
-                  (sub_image, self.section_id))
+            warnings.warng("sub_image %d does not exist "
+                           "in section_data_set_%d" %
+                           (sub_image, self.section_id))
 
             return None
 
@@ -241,15 +244,18 @@ class SectionDataSet(object):
 
         if os.path.exists(local_filename):
             if not os.path.isfile(local_filename):
-                print('%s already exists but is not a file' % local_filename)
+                warnings.warn('%s already exists but is not a file' % local_filename)
                 return False
             if not clobber:
-                print('%s already exists; re-run with clobber=True to overwrite')
+                warnings.warn("%s already exists; re-run with "
+                              "clobber=True to overwrite" % local_filename)
                 return False
 
         downsample_key = 'downsample_%d' % downsample
         if downsample_key not in self.section_images[fname].keys():
-            print("%d is not a valid downsampling tier for %s" % (downsample, fname))
+            warnings.warn("%d is not a valid downsampling tier for %s"
+                          % (downsample, fname))
+            return False
         aws_key = 'section_data_set_%d/%s/%s' % (self.section_id, downsample_key, fname)
 
         s3 = self.session.client('s3')
@@ -263,8 +269,9 @@ class SectionDataSet(object):
                                          local_filename, clobber=False):
 
         if tissue_index not in self.tissue_index_to_img:
-            print("tissue_index %d does not exist in section_data_set_%d" %
-                   (tissue_index, self.section_id))
+            warnings.warn("tissue_index %d does not exist in "
+                          "section_data_set_%d" %
+                          (tissue_index, self.section_id))
             return False
         fname = self.tissue_index_to_img[tissue_index]
         return self._download_img(fname, downsample, local_filename, clobber=clobber)
@@ -273,8 +280,9 @@ class SectionDataSet(object):
                                       local_filename, clobber=False):
 
         if sub_image not in self.subimg_to_img:
-            print("sub_image %d does not exst in section_data_set_%d" %
-                  (sub_image, self.section_id))
+            warnings.warn("sub_image %d does not exist "
+                          "in section_data_set_%d" %
+                          (sub_image, self.section_id))
             return False
         fname = self.sub_img_to_img[sub_image]
         return self._download_img(fname, downsample, local_filename, clobber=clobber)
