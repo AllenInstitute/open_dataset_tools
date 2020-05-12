@@ -147,9 +147,9 @@ class SectionDataSetTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        fname = os.path.join(cls.tmp_dir,
-                 'section_data_set_%d_metadata.json' % cls.example_section_id)
-        os.unlink(fname)
+        f_list = os.listdir(cls.tmp_dir)
+        for fname in f_list:
+            os.unlink(os.path.join(cls.tmp_dir, fname))
         shutil.rmtree(cls.tmp_dir)
 
     def test_metadata_from_tissue_index(self):

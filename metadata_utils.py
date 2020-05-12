@@ -284,5 +284,5 @@ class SectionDataSet(object):
                           "in section_data_set_%d" %
                           (sub_image, self.section_id))
             return False
-        fname = self.sub_img_to_img[sub_image]
+        fname = self.subimg_to_img[sub_image]
         return self._download_img(fname, downsample, local_filename, clobber=clobber)
