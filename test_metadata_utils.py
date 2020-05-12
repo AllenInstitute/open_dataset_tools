@@ -171,5 +171,6 @@ class SectionDataSetTestCase(unittest.TestCase):
         self.assertIn("tissue_index 999 does not exist",
                       bad_tissue.warning.args[0])
 
+
 if __name__ == "__main__":
     unittest.main()
