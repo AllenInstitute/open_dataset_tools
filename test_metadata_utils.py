@@ -3,6 +3,7 @@ import hashlib
 import aws_utils
 import metadata_utils as mu
 import unittest
+import time
 
 import warnings
 
@@ -100,6 +101,27 @@ class MetadataTestCase(unittest.TestCase):
                              'e8eff384bb39cc981f93bad62e6fad02')
 
             os.unlink(fname)
+
+    def test_download_caching(self):
+        """
+        Test that the method to download metadata does not download it twice
+        unnecessarily
+        """
+        section_id = 99
+        fname = os.path.join(self.tmp_dir,
+                             'section_data_set_%d_metadata.json' % section_id)
+        aws_name = 'section_data_set_%d/section_data_set.json' % section_id
+        self.assertFalse(os.path.exists(fname))
+        mu._get_aws_file(aws_name, fname, self.session)
+        self.assertTrue(os.path.exists(fname))
+        fstats = os.stat(fname)
+        t0 = fstats.st_mtime_ns  # get the time of last modificatio in nanosec
+        time.sleep(2)  # wait so that, if redownloaded, st_mtime_ns would differ
+        mu._get_aws_file(aws_name, fname, self.session)
+        fstats = os.stat(fname)
+        t1 = fstats.st_mtime_ns
+        self.assertEqual(t1, t0)
+
 
 if __name__ == "__main__":
     unittest.main()
