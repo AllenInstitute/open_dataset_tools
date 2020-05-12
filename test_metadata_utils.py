@@ -200,7 +200,7 @@ class SectionDataSetTestCase(unittest.TestCase):
         self.assertIn("sub_image 999 does not exist",
                       bad_tissue.warning.args[0])
 
-    def test_image_download(self):
+    def test_bad_tier_image_download(self):
         """
         """
         dataset = mu.SectionDataSet(self.example_section_id,
@@ -232,6 +232,22 @@ class SectionDataSetTestCase(unittest.TestCase):
         metadata = dataset.image_metadata_from_sub_image(102000016)
         self.assertNotIn('downsample_0', metadata)
 
+    def test_good_tier_image_download(self):
+        dataset = mu.SectionDataSet(self.example_section_id,
+                                    session=self.session,
+                                    tmp_dir=self.tmp_dir)
+
+        # try downloading good files
+        tiff_name = os.path.join(self.tmp_dir, 'tiss_66.tiff')
+        self.assertFalse(os.path.exists(tiff_name))
+        dataset.download_image_from_tissue_index(66, 6, tiff_name)
+        self.assertTrue(os.path.exists(tiff_name))
+
+        # try downloading good files
+        tiff_name = os.path.join(self.tmp_dir, 'tiss_102000002.tiff')
+        self.assertFalse(os.path.exists(tiff_name))
+        dataset.download_image_from_sub_image(102000002, 6, tiff_name)
+        self.assertTrue(os.path.exists(tiff_name))
 
 
 
