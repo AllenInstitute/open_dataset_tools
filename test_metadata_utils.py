@@ -413,6 +413,36 @@ class SectionDataSetTestCase(unittest.TestCase):
         md5_2 = md5_obj.hexdigest()
         self.assertNotEqual(md5_0, md5_2)
 
+    def test_download_into_not_a_file(self):
+        """
+        Test what happens when you try to download into a path
+        that exists but is not a file
+        """
+        tiff_name = tempfile.mkdtemp(dir=self.tmp_dir)
+        dataset = mu.SectionDataSet(self.example_section_id,
+                                    session=self.session,
+                                    tmp_dir=self.tmp_dir)
+
+        with self.assertWarns(UserWarning) as bad_download:
+            res = dataset.download_image_from_sub_image(102000002,
+                                                        5, tiff_name)
+        self.assertIs(res, False)
+        self.assertIn('%s already exists but is not a file' % tiff_name,
+                      bad_download.warning.args[0])
+        self.assertTrue(os.path.isdir(tiff_name))
+
+        with self.assertWarns(UserWarning) as bad_download:
+            res = dataset.download_image_from_sub_image(102000002,
+                                                        5, tiff_name,
+                                                        clobber=True)
+        self.assertIs(res, False)
+        self.assertIn('%s already exists but is not a file' % tiff_name,
+                      bad_download.warning.args[0])
+        self.assertTrue(os.path.isdir(tiff_name))
+
+
+        shutil.rmtree(tiff_name)
+
 
 if __name__ == "__main__":
     unittest.main()
