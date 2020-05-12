@@ -200,6 +200,33 @@ class SectionDataSetTestCase(unittest.TestCase):
         self.assertIn("sub_image 999 does not exist",
                       bad_tissue.warning.args[0])
 
+    def test_image_download(self):
+        """
+        """
+        dataset = mu.SectionDataSet(self.example_section_id,
+                                    session=self.session,
+                                    tmp_dir=self.tmp_dir)
+
+        # verify what happens when you ask for a resolution
+        # that does not exist
+        with self.assertWarns(UserWarning) as bad_image:
+            res = dataset.download_image_from_tissue_index(66,
+                                                           0,
+                                                           'junk.tiff')
+        self.assertFalse(res)
+        self.assertIn("0 is not a valid downsampling tier",
+                      bad_image.warning.args[0])
+
+        with self.assertWarns(UserWarning) as bad_image:
+            res = dataset.download_image_from_sub_image(102000016,
+                                                        0,
+                                                        'junk.tiff')
+        self.assertFalse(res)
+        self.assertIn("0 is not a valid downsampling tier",
+                      bad_image.warning.args[0])
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
