@@ -342,6 +342,7 @@ class SectionDataSetTestCase(unittest.TestCase):
         res = dataset.download_image_from_tissue_index(114, 4, tiff_name,
                                                        clobber=True)
         self.assertIs(res, True)
+
         # check that a new file was downloaded
         md5_obj = hashlib.md5()
         with open(tiff_name, 'rb') as in_file:
@@ -400,6 +401,7 @@ class SectionDataSetTestCase(unittest.TestCase):
         res = dataset.download_image_from_sub_image(102000008, 4, tiff_name,
                                                     clobber=True)
         self.assertIs(res, True)
+
         # check that a new file was downloaded
         md5_obj = hashlib.md5()
         with open(tiff_name, 'rb') as in_file:
