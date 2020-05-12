@@ -48,14 +48,13 @@ def _get_tmp_dir():
 
     return tmp_dir
 
-def _get_aws_file(aws_key, local_filename, session,
-                  bucket_name='allen-mouse-brain-atlas'):
 
+def _need_to_download(aws_key, local_filename, session,
+                      bucket_name='allen-mouse-brain-atlas'):
     """
-    Download the AWS file specified by bucket_name:aws_key to
-    local_filename, but only if necessary
+    Return a boolean indicating whether or not aws_key
+    needs to be downloaded to keep local_filename up_to_date
     """
-
     target_md5 = _get_aws_md5(aws_key, session, bucket_name=bucket_name)
     must_download = False
     if not os.path.exists(local_filename):
@@ -66,6 +65,18 @@ def _get_aws_file(aws_key, local_filename, session,
 
         if not _compare_md5(local_filename, target_md5):
             must_download = True
+    return must_download, target_md5
+
+def _get_aws_file(aws_key, local_filename, session,
+                  bucket_name='allen-mouse-brain-atlas'):
+
+    """
+    Download the AWS file specified by bucket_name:aws_key to
+    local_filename, but only if necessary
+    """
+    (must_download,
+         target_md5) = _need_to_download(aws_key, local_filename, session,
+                                         bucket_name=bucket_name)
 
     if must_download:
         print('downloading %s' % aws_key)
