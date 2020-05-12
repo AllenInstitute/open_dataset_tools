@@ -6,6 +6,7 @@ import unittest
 import time
 import tempfile
 import shutil
+import json
 
 import warnings
 
@@ -145,10 +146,22 @@ class SectionDataSetTestCase(unittest.TestCase):
                                 tmp_dir=cls.tmp_dir)
 
 
-    def test_dataset_handler(self):
+    def test_metadata_from_tissue_index(self):
+        """
+        Try loading the metadata by tissue_index.
+        Compare to a json dict of the expected result that was
+        copied to test_data/ by hand.
+        """
         dataset = mu.SectionDataSet(self.example_section_id,
                                     session=self.session,
                                     tmp_dir=self.tmp_dir)
+
+        metadata = dataset.image_metadata_from_tissue_index(154)
+        control_file = os.path.join('test_data',
+                                    'example_metadata_tissue_154.json')
+        with open(control_file, 'rb') as in_file:
+            control_metadata = json.load(in_file)
+        self.assertEqual(metadata, control_metadata)
 
 
 if __name__ == "__main__":

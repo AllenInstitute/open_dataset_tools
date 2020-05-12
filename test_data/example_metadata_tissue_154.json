@@ -1,0 +1,65 @@
+{
+  "bits_per_component": 8,
+  "id": 102000038,
+  "resolution": 1.049,
+  "section_number": 154,
+  "downsampling": {
+    "downsample_0": {
+      "width": 15297,
+      "height": 8097,
+      "x": 0,
+      "y": 0,
+      "image_file_width": 15297,
+      "image_file_height": 8097
+    },
+    "downsample_1": {
+      "width": 7648,
+      "height": 4048,
+      "x": 0,
+      "y": 0,
+      "image_file_width": 7648,
+      "image_file_height": 4048
+    },
+    "downsample_2": {
+      "width": 3824,
+      "height": 2024,
+      "x": 0,
+      "y": 0,
+      "image_file_width": 3824,
+      "image_file_height": 2024
+    },
+    "downsample_3": {
+      "width": 1912,
+      "height": 1012,
+      "x": 0,
+      "y": 0,
+      "image_file_width": 1912,
+      "image_file_height": 1012
+    },
+    "downsample_4": {
+      "width": 956,
+      "height": 506,
+      "x": 0,
+      "y": 0,
+      "image_file_width": 956,
+      "image_file_height": 506
+    },
+    "downsample_5": {
+      "width": 478,
+      "height": 253,
+      "x": 0,
+      "y": 0,
+      "image_file_width": 478,
+      "image_file_height": 253
+    },
+    "downsample_6": {
+      "width": 239,
+      "height": 126,
+      "x": 0,
+      "y": 0,
+      "image_file_width": 239,
+      "image_file_height": 126
+    }
+  },
+  "image_file_name": "section_image_102000038.tiff"
+}
