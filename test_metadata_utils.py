@@ -170,6 +170,30 @@ class SectionDataSetTestCase(unittest.TestCase):
         self.assertIn("tissue_index 999 does not exist",
                       bad_tissue.warning.args[0])
 
+    def test_metadata_from_sub_image(self):
+        """
+        Try loading the metadata by sub_image_id.
+        Compare to a json dict of the expected result that was
+        copied to test_data/ by hand.
+        """
+        dataset = mu.SectionDataSet(self.example_section_id,
+                                    session=self.session,
+                                    tmp_dir=self.tmp_dir)
+
+        metadata = dataset.image_metadata_from_sub_image(102000022)
+        control_file = os.path.join('test_data',
+                                    'example_metadata_id_102000022.json')
+        with open(control_file, 'rb') as in_file:
+            control_metadata = json.load(in_file)
+        self.assertEqual(metadata, control_metadata)
+
+        # try loading a bad value
+        with self.assertWarns(UserWarning) as bad_tissue:
+            metadata = dataset.image_metadata_from_sub_image(999)
+        self.assertIsNone(metadata)
+        self.assertIn("sub_image 999 does not exist",
+                      bad_tissue.warning.args[0])
+
 
 if __name__ == "__main__":
     unittest.main()
