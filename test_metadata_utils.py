@@ -167,7 +167,6 @@ class SectionDataSetTestCase(unittest.TestCase):
         with self.assertWarns(UserWarning) as bad_tissue:
             metadata = dataset.image_metadata_from_tissue_index(999)
         self.assertIsNone(metadata)
-        #print(bad_tissue.warning.args)
         self.assertIn("tissue_index 999 does not exist",
                       bad_tissue.warning.args[0])
 
