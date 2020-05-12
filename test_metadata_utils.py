@@ -147,6 +147,10 @@ class MetadataTestCase(unittest.TestCase):
         self.assertEqual(t1, t0)
         self.clean_tmp_dir(tmp_dir)
 
+    def test_dataset_handler(self):
+        dataset = mu.SectionDataSet(self.example_section_id,
+                                    session=self.session,
+                                    tmp_dir=self.tmp_dir)
 
 if __name__ == "__main__":
     unittest.main()
