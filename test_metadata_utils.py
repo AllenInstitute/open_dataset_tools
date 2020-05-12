@@ -202,6 +202,8 @@ class SectionDataSetTestCase(unittest.TestCase):
 
     def test_bad_tier_image_download(self):
         """
+        Test behavior of SectionDataSet when you ask it to
+        download images from tiers that do not exist
         """
         dataset = mu.SectionDataSet(self.example_section_id,
                                     session=self.session,
@@ -233,6 +235,10 @@ class SectionDataSetTestCase(unittest.TestCase):
         self.assertNotIn('downsample_0', metadata)
 
     def test_good_tier_image_download(self):
+        """
+        Test behavior of SectionDataSet when you ask it to download
+        image tiers that do exist.
+        """
         dataset = mu.SectionDataSet(self.example_section_id,
                                     session=self.session,
                                     tmp_dir=self.tmp_dir)
