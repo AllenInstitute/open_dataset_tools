@@ -350,6 +350,61 @@ class SectionDataSetTestCase(unittest.TestCase):
         md5_2 = md5_obj.hexdigest()
         self.assertNotEqual(md5_0, md5_2)
 
+    def test_clobber_sub_image(self):
+        """
+        Test behavior of clobber kwarg in methods to download images
+        """
+        dataset = mu.SectionDataSet(self.example_section_id,
+                                    session=self.session,
+                                    tmp_dir=self.tmp_dir)
+
+        tiff_name = os.path.join(self.tmp_dir, 'clobber2.tiff')
+        res = dataset.download_image_from_sub_image(102000002,
+                                                    5, tiff_name)
+        self.assertIs(res, True)
+
+        md5_obj = hashlib.md5()
+        with open(tiff_name, 'rb') as in_file:
+            while True:
+                data = in_file.read(1000)
+                if len(data) == 0:
+                    break
+                md5_obj.update(data)
+        md5_0 = md5_obj.hexdigest()
+
+        # try downloading to the same file without clobber
+        with self.assertWarns(UserWarning) as bad_download:
+            res = dataset.download_image_from_sub_image(102000008,
+                                                        4, tiff_name)
+        self.assertIs(res, False)
+        self.assertIn('re-run with clobber=True',
+                      bad_download.warning.args[0])
+        # check that no new file was downloaded
+        md5_obj = hashlib.md5()
+        with open(tiff_name, 'rb') as in_file:
+            while True:
+                data = in_file.read(1000)
+                if len(data) == 0:
+                    break
+                md5_obj.update(data)
+        md5_1 = md5_obj.hexdigest()
+        self.assertEqual(md5_0, md5_1)
+
+        # rerun with clobber
+        res = dataset.download_image_from_sub_image(102000008, 4, tiff_name,
+                                                    clobber=True)
+        self.assertIs(res, True)
+        # check that a new file was downloaded
+        md5_obj = hashlib.md5()
+        with open(tiff_name, 'rb') as in_file:
+            while True:
+                data = in_file.read(1000)
+                if len(data) == 0:
+                    break
+                md5_obj.update(data)
+        md5_2 = md5_obj.hexdigest()
+        self.assertNotEqual(md5_0, md5_2)
+
 
 if __name__ == "__main__":
     unittest.main()
