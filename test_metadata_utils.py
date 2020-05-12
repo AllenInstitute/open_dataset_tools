@@ -212,7 +212,7 @@ class SectionDataSetTestCase(unittest.TestCase):
 
         # verify what happens when you ask for a resolution
         # that does not exist
-        tiff_name = os.path.join(self.tmp_dir, 'junk_tiff')
+        tiff_name = os.path.join(self.tmp_dir, 'junk.tiff')
         with self.assertWarns(UserWarning) as bad_image:
             res = dataset.download_image_from_tissue_index(66,
                                                            0,
