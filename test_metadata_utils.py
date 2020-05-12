@@ -4,6 +4,8 @@ import aws_utils
 import metadata_utils as mu
 import unittest
 
+import warnings
+
 class MetadataTestCase(unittest.TestCase):
 
     @classmethod
@@ -18,6 +20,10 @@ class MetadataTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # see
+        # https://github.com/boto/boto3/issues/454#issuecomment-380900404
+        warnings.filterwarnings("ignore", category=ResourceWarning,
+                                message='unclosed <ssl.SSLSocket')
         cls.tmp_dir = 'test_tmp'
         cls.cleanUpTmp()
         cls.session = aws_utils.get_boto3_session()
