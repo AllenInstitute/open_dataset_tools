@@ -34,6 +34,14 @@ class MetadataTestCase(unittest.TestCase):
     def tearDownClass(cls):
         cls.cleanUpTmp()
 
+    def test_get_tmp_dir(self):
+        """
+        Test that _get_tmp_dir operates as expected
+        """
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        tmp_dir = mu._get_tmp_dir()
+        self.assertEqual(tmp_dir, os.path.join(this_dir, 'tmp'))
+
     def test_atlas_metadata(self):
         """
         Test that we can download the global section_data_sets.json
