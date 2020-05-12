@@ -12,32 +12,13 @@ import warnings
 class MetadataTestCase(unittest.TestCase):
 
     @classmethod
-    def cleanUpTmp(cls):
-        # clean out tmp_test
-        tmp_file_list = os.listdir(cls.tmp_dir)
-        for fname in tmp_file_list:
-            if fname.startswith('.'):
-                continue
-            full_name = os.path.join(cls.tmp_dir, fname)
-            os.unlink(full_name)
-
-    @classmethod
     def setUpClass(cls):
         # regarding warnings filter, see
         # https://github.com/boto/boto3/issues/454#issuecomment-380900404
         warnings.filterwarnings("ignore", category=ResourceWarning,
                                 message='unclosed <ssl.SSLSocket')
         cls.tmp_dir = 'test_tmp'
-        cls.cleanUpTmp()
         cls.session = aws_utils.get_boto3_session()
-        cls.example_section_id = 275693
-        mu.get_section_metadata(cls.example_section_id,
-                                session=cls.session,
-                                tmp_dir=cls.tmp_dir)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.cleanUpTmp()
 
     def get_tmp_dir(self):
         """
@@ -147,10 +128,28 @@ class MetadataTestCase(unittest.TestCase):
         self.assertEqual(t1, t0)
         self.clean_tmp_dir(tmp_dir)
 
+
+class SectionDataSetTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # regarding warnings filter, see
+        # https://github.com/boto/boto3/issues/454#issuecomment-380900404
+        warnings.filterwarnings("ignore", category=ResourceWarning,
+                                message='unclosed <ssl.SSLSocket')
+        cls.tmp_dir = 'test_tmp'
+        cls.session = aws_utils.get_boto3_session()
+        cls.example_section_id = 275693
+        mu.get_section_metadata(cls.example_section_id,
+                                session=cls.session,
+                                tmp_dir=cls.tmp_dir)
+
+
     def test_dataset_handler(self):
         dataset = mu.SectionDataSet(self.example_section_id,
                                     session=self.session,
                                     tmp_dir=self.tmp_dir)
+
 
 if __name__ == "__main__":
     unittest.main()
