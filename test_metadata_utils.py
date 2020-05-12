@@ -240,13 +240,15 @@ class SectionDataSetTestCase(unittest.TestCase):
         # try downloading good files
         tiff_name = os.path.join(self.tmp_dir, 'tiss_66.tiff')
         self.assertFalse(os.path.exists(tiff_name))
-        dataset.download_image_from_tissue_index(66, 6, tiff_name)
+        res = dataset.download_image_from_tissue_index(66, 6, tiff_name)
+        self.assertIs(res, True)
         self.assertTrue(os.path.exists(tiff_name))
 
         # try downloading good files
         tiff_name = os.path.join(self.tmp_dir, 'tiss_102000002.tiff')
         self.assertFalse(os.path.exists(tiff_name))
-        dataset.download_image_from_sub_image(102000002, 6, tiff_name)
+        res = dataset.download_image_from_sub_image(102000002, 6, tiff_name)
+        self.assertIs(res, True)
         self.assertTrue(os.path.exists(tiff_name))
 
 
