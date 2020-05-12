@@ -209,19 +209,22 @@ class SectionDataSetTestCase(unittest.TestCase):
 
         # verify what happens when you ask for a resolution
         # that does not exist
+        tiff_name = os.path.join(self.tmp_dir, 'junk_tiff')
         with self.assertWarns(UserWarning) as bad_image:
             res = dataset.download_image_from_tissue_index(66,
                                                            0,
-                                                           'junk.tiff')
+                                                           tiff_name)
         self.assertFalse(res)
+        self.assertFalse(os.path.exists(tiff_name))
         self.assertIn("0 is not a valid downsampling tier",
                       bad_image.warning.args[0])
 
         with self.assertWarns(UserWarning) as bad_image:
             res = dataset.download_image_from_sub_image(102000016,
                                                         0,
-                                                        'junk.tiff')
+                                                        tiff_name)
         self.assertFalse(res)
+        self.assertFalse(os.path.exists(tiff_name))
         self.assertIn("0 is not a valid downsampling tier",
                       bad_image.warning.args[0])
 
