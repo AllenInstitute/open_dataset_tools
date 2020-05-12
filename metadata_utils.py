@@ -180,17 +180,19 @@ def get_section_metadata(section_id, session=None, tmp_dir=None):
 
 class SectionDataSet(object):
 
-    def __init__(self, section_id, session=None):
+    def __init__(self, section_id, session=None, tmp_dir=None):
         """
         Load and store the metadata for the section_data_set specified
         by section_id. Use the boto3 session provided as a kwarg, or
         open a session using credentials found in accessKeys.csv
         """
+        sef.tmp_dir=tmp_dir
         self.section_id = section_id
         if session is None:
             session = aws_utils.get_boto3_session()
         self.session = session
-        self.metadata = get_section_metadata(section_id, session=session)
+        self.metadata = get_section_metadata(section_id, session=session,
+                                             tmp_dir=self.tmp_dir)
 
         # remove section images and construct a dict keyed on image name
         tmp_section_images = self.metadata.pop('section_images')
