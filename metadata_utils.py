@@ -66,6 +66,7 @@ def _need_to_download(aws_key, local_filename, session,
             must_download = True
     return must_download, target_md5
 
+
 def _get_aws_file(aws_key, local_filename, session,
                   bucket_name='allen-mouse-brain-atlas'):
 
