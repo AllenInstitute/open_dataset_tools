@@ -7,6 +7,7 @@ import time
 import tempfile
 import shutil
 import json
+import PIL.Image
 
 import warnings
 
@@ -249,6 +250,10 @@ class SectionDataSetTestCase(unittest.TestCase):
         res = dataset.download_image_from_tissue_index(66, 6, tiff_name)
         self.assertIs(res, True)
         self.assertTrue(os.path.exists(tiff_name))
+        # make sure image is valid
+        f = PIL.Image.open(tiff_name)
+        f.load()
+        f.close()
 
         # try downloading good files
         tiff_name = os.path.join(self.tmp_dir, 'tiss_102000002.tiff')
@@ -256,7 +261,10 @@ class SectionDataSetTestCase(unittest.TestCase):
         res = dataset.download_image_from_sub_image(102000002, 6, tiff_name)
         self.assertIs(res, True)
         self.assertTrue(os.path.exists(tiff_name))
-
+        # make sure image is valid
+        f = PIL.Image.open(tiff_name)
+        f.load()
+        f.close()
 
 
 if __name__ == "__main__":
