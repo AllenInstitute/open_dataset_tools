@@ -11,6 +11,69 @@ import PIL.Image
 
 import warnings
 
+class AWSUtilsTestCase(unittest.TestCase):
+
+    def test_get_keys_no_file(self):
+        """
+        Test what happens when you do not specify a key
+        name for get_aws_keys
+        """
+        with self.assertRaises(RuntimeError) as bad_run:
+            aws_utils.get_aws_keys(None)
+        self.assertEqual('Must specify filename in get_aws_keys',
+                         bad_run.exception.args[0])
+
+    def test_get_keys_not_a_file(self):
+        """
+        Test what happens when you specify something that is not
+        a file in get_aws_keys
+        """
+        dir_name = tempfile.mkdtemp(dir='test_tmp')
+        with self.assertRaises(RuntimeError) as bad_run:
+            aws_utils.get_aws_keys(dir_name)
+        self.assertEqual('\n%s\nis not a file' % dir_name,
+                         bad_run.exception.args[0])
+
+        shutil.rmtree(dir_name)
+
+    def test_get_keys_bad_file(self):
+        """
+        Test what happens when the expected values are not in the
+        accessKeys.csv file
+        """
+        fname = tempfile.mkstemp(dir='test_tmp', suffix='.csv')[1]
+        with open(fname, 'w') as out_file:
+            out_file.write('a,b,c,d\n')
+            out_file.write('1,2,3,4\n')
+
+        with self.assertRaises(RuntimeError) as bad_run:
+            aws_utils.get_aws_keys(fname)
+        self.assertIn("Could not find 'Access key ID'",
+                      bad_run.exception.args[0])
+        self.assertIn("Could not find 'Secret access key'",
+                      bad_run.exception.args[0])
+        self.assertIn(fname, bad_run.exception.args[0])
+
+        os.unlink(fname)
+
+    def test_dummy_keys(self):
+        """
+        Test reading keys from a properly formatted file
+        """
+        fname = tempfile.mkstemp(dir='test_tmp', suffix='.csv')[1]
+        key_id = 'meringue'
+        secret_key = 'blueberry'
+        with open(fname, 'w') as out_file:
+            out_file.write('a,b,Secret access key,c,d,Access key ID,e\n')
+            out_file.write('apple,banana,%s,2,4,%s,9\n' %
+                           (secret_key, key_id))
+
+        read_id, read_key = aws_utils.get_aws_keys(fname)
+        self.assertEqual(read_id, key_id)
+        self.assertEqual(read_key, secret_key)
+        os.unlink(fname)
+
+
 class MetadataTestCase(unittest.TestCase):
 
     @classmethod
