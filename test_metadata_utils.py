@@ -324,6 +324,9 @@ class SectionDataSetTestCase(unittest.TestCase):
         self.assertIs(res, False)
         self.assertIn('re-run with clobber=True',
                       bad_download.warning.args[0])
+        self.assertIn('%s already exists' % tiff_name,
+                      bad_download.warning.args[0])
+
         # check that no new file was downloaded
         md5_obj = hashlib.md5()
         with open(tiff_name, 'rb') as in_file:
@@ -379,6 +382,9 @@ class SectionDataSetTestCase(unittest.TestCase):
         self.assertIs(res, False)
         self.assertIn('re-run with clobber=True',
                       bad_download.warning.args[0])
+        self.assertIn('%s already exists' % tiff_name,
+                      bad_download.warning.args[0])
+
         # check that no new file was downloaded
         md5_obj = hashlib.md5()
         with open(tiff_name, 'rb') as in_file:
