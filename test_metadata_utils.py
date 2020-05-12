@@ -138,7 +138,7 @@ class SectionDataSetTestCase(unittest.TestCase):
         # https://github.com/boto/boto3/issues/454#issuecomment-380900404
         warnings.filterwarnings("ignore", category=ResourceWarning,
                                 message='unclosed <ssl.SSLSocket')
-        cls.tmp_dir = 'test_tmp'
+        cls.tmp_dir = tempfile.mkdtemp(dir='test_tmp')
         cls.session = aws_utils.get_boto3_session()
         cls.example_section_id = 275693
         mu.get_section_metadata(cls.example_section_id,
@@ -150,6 +150,7 @@ class SectionDataSetTestCase(unittest.TestCase):
         fname = os.path.join(cls.tmp_dir,
                  'section_data_set_%d_metadata.json' % cls.example_section_id)
         os.unlink(fname)
+        shutil.rmtree(cls.tmp_dir)
 
     def test_metadata_from_tissue_index(self):
         """
