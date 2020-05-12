@@ -13,6 +13,17 @@ import warnings
 
 class AWSUtilsTestCase(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp_dir = tempfile.mkdtemp(dir='test_tmp')
+
+    @classmethod
+    def tearDownClass(cls):
+        flist = os.listdir(cls.tmp_dir)
+        for fname in flist:
+            os.unlink(os.path.join(cls.tmp_dir, fname))
+        shutil.rmtree(cls.tmp_dir)
+
     def test_get_keys_no_file(self):
         """
         Test what happens when you do not specify a key
@@ -28,7 +39,7 @@ class AWSUtilsTestCase(unittest.TestCase):
         Test what happens when you specify something that is not
         a file in get_aws_keys
         """
-        dir_name = tempfile.mkdtemp(dir='test_tmp')
+        dir_name = tempfile.mkdtemp(dir=self.tmp_dir)
         with self.assertRaises(RuntimeError) as bad_run:
             aws_utils.get_aws_keys(dir_name)
         self.assertEqual('\n%s\nis not a file' % dir_name,
@@ -41,7 +52,7 @@ class AWSUtilsTestCase(unittest.TestCase):
         Test what happens when the expected values are not in the
         accessKeys.csv file
         """
-        fname = tempfile.mkstemp(dir='test_tmp', suffix='.csv')[1]
+        fname = tempfile.mkstemp(dir=self.tmp_dir, suffix='.csv')[1]
         with open(fname, 'w') as out_file:
             out_file.write('a,b,c,d\n')
             out_file.write('1,2,3,4\n')
@@ -60,7 +71,7 @@ class AWSUtilsTestCase(unittest.TestCase):
         """
         Test reading keys from a properly formatted file
         """
-        fname = tempfile.mkstemp(dir='test_tmp', suffix='.csv')[1]
+        fname = tempfile.mkstemp(dir=self.tmp_dir, suffix='.csv')[1]
         key_id = 'meringue'
         secret_key = 'blueberry'
         with open(fname, 'w') as out_file:
