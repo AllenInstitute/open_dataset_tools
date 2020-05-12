@@ -23,7 +23,7 @@ class MetadataTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # see
+        # regarding warnings filter, see
         # https://github.com/boto/boto3/issues/454#issuecomment-380900404
         warnings.filterwarnings("ignore", category=ResourceWarning,
                                 message='unclosed <ssl.SSLSocket')
