@@ -147,11 +147,9 @@ class SectionDataSetTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        f_list = os.listdir(cls.tmp_dir)
-        for fname in f_list:
-            if fname.startswith('.'):
-                continue
-            os.unlink(os.path.join(cls.tmp_dir, fname))
+        fname = os.path.join(cls.tmp_dir,
+                 'section_data_set_%d_metadata.json' % cls.example_section_id)
+        os.unlink(fname)
 
     def test_metadata_from_tissue_index(self):
         """
