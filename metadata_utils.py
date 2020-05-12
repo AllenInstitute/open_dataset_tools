@@ -52,8 +52,25 @@ def _compare_md5(fname, target):
 def _need_to_download(aws_key, local_filename, session,
                       bucket_name='allen-mouse-brain-atlas'):
     """
-    Return a boolean indicating whether or not aws_key
-    needs to be downloaded to keep local_filename up_to_date
+    Check whether or not aws_key needs to be downloaded to keep
+    local_filename up-to-date.
+
+    Parameters
+    ----------
+    aws_key is the Key of the file in S3
+
+    local_filename is the name of the local corresponding to aws_key
+
+    session is a boto3 session
+
+    bucket_name is the name of the S3 bucket where the file resides
+    (Default: 'allen-mouse-brain-atlas')
+
+    Returns
+    -------
+    A boolean that is True if the file needs to be downloaded from S3
+
+    A string containing the md5checksum of the file
     """
     target_md5 = _get_aws_md5(aws_key, session, bucket_name=bucket_name)
     must_download = False
@@ -70,10 +87,24 @@ def _need_to_download(aws_key, local_filename, session,
 
 def _get_aws_file(aws_key, local_filename, session,
                   bucket_name='allen-mouse-brain-atlas'):
-
     """
     Download the AWS file specified by bucket_name:aws_key to
     local_filename, but only if necessary
+
+    Parameters
+    ----------
+    aws_key is the Key of the file in S3
+
+    local_filename is the name of the local corresponding to aws_key
+
+    session is a boto3 session
+
+    bucket_name is the name of the S3 bucket where the file resides
+    (Default: 'allen-mouse-brain-atlas')
+
+    Returns
+    -------
+    None; just download the file to the specified local_filename
     """
     (must_download,
          target_md5) = _need_to_download(aws_key, local_filename, session,
@@ -155,9 +186,6 @@ def get_section_metadata(section_id, session=None, tmp_dir=None):
     Returns
     -------
     A dict containing the metadata for the specified Session.
-
-    Note: this method will download the json file containing the metadata
-    into the tmp/ sub directory of the directory containing metadata_utils.py
     """
     if tmp_dir is None:
         tmp_dir = _get_tmp_dir()
@@ -186,6 +214,19 @@ class SectionDataSet(object):
         Load and store the metadata for the section_data_set specified
         by section_id. Use the boto3 session provided as a kwarg, or
         open a session using credentials found in accessKeys.csv
+
+        Parameters
+        ----------
+        section_id is an int indicating which section_data_set to
+        load
+
+        session is a boto3 session. If None, will open a session
+        using the credentials found in accessKeys.csv in the
+        same directory as metadata_utils.py. (Default: None)
+
+        tmp_dir is the directory in which to store downloaded *.json
+        files. If None, will use the tmp/ sub-directory of the
+        directory containing metadata_utils.py. (Default:None)
         """
         self.tmp_dir=tmp_dir
         self.section_id = section_id
@@ -241,6 +282,25 @@ class SectionDataSet(object):
         return copy.deepcopy(self.section_images[fname])
 
     def _download_img(self, fname, downsample, local_filename, clobber=False):
+        """
+        Download the TIFF file specified by fname and downsample
+
+        Parameters
+        ----------
+        fname is the base name of the TIFF file to download
+
+        downsample is an integer denoting the downsampling tier to download
+
+        local_filename is the file name where the TIFF file will be saved
+
+        clobber is a boolean. If True, overwrite pre-existing local_filename.
+        Otherwise, throw a warning and exit if local_filename already exists
+
+        Returns
+        -------
+        True if the TIFF file was successfully downloaded to local_filename;
+        False if not.
+        """
 
         if os.path.exists(local_filename):
             if not os.path.isfile(local_filename):
@@ -267,7 +327,30 @@ class SectionDataSet(object):
 
     def download_image_from_tissue_index(self, tissue_index, downsample,
                                          local_filename, clobber=False):
+        """
+        Download a TIFF file specified by its tissue_index and downsampling
+        tier.
 
+        Parameters
+        ----------
+        tissue_index is an integer corressponding to the
+        tissue_index/section_number of the TIFF to be downloaded
+
+        downsample is an integer denoting the downsampling
+        tier of the TIFF to be downloaded
+
+        local_filename is the file name where the downloaded
+        TIFF file should be saved
+
+        clobber is a boolean. If True, overwrite pre-existing
+        local_filename. If False, raise a warning and exit in
+        the case where local_filename already exists
+
+        Returns
+        -------
+        True if the TIFF was successfully downloaded to local_filename;
+        False if not
+        """
         if tissue_index not in self.tissue_index_to_img:
             warnings.warn("tissue_index %d does not exist in "
                           "section_data_set_%d" %
@@ -278,7 +361,30 @@ class SectionDataSet(object):
 
     def download_image_from_sub_image(self, sub_image, downsample,
                                       local_filename, clobber=False):
+        """
+        Download a TIFF file specified by its sub-image ID and downsampling
+        tier.
 
+        Parameters
+        ----------
+        sub_image is an integer corressponding to the sub-image ID
+        of the TIFF to be downloaded
+
+        downsample is an integer denoting the downsampling tier of
+        the TIFF to be downloaded
+
+        local_filename is the file name where the downloaded TIFF
+        file should be saved
+
+        clobber is a boolean. If True, overwrite pre-existing
+        local_filename. If False, raise a warning and exit in the
+        case where local_filename already exists
+
+        Returns
+        -------
+        True if the TIFF was successfully downloaded to local_filename;
+        False if not
+        """
         if sub_image not in self.subimg_to_img:
             warnings.warn("sub_image %d does not exist "
                           "in section_data_set_%d" %
