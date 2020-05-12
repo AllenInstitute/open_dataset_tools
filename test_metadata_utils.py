@@ -214,7 +214,7 @@ class SectionDataSetTestCase(unittest.TestCase):
             res = dataset.download_image_from_tissue_index(66,
                                                            0,
                                                            tiff_name)
-        self.assertFalse(res)
+        self.assertIs(res, False)
         self.assertFalse(os.path.exists(tiff_name))
         self.assertIn("0 is not a valid downsampling tier",
                       bad_image.warning.args[0])
@@ -225,7 +225,7 @@ class SectionDataSetTestCase(unittest.TestCase):
             res = dataset.download_image_from_sub_image(102000016,
                                                         0,
                                                         tiff_name)
-        self.assertFalse(res)
+        self.assertIs(res, False)
         self.assertFalse(os.path.exists(tiff_name))
         self.assertIn("0 is not a valid downsampling tier",
                       bad_image.warning.args[0])
