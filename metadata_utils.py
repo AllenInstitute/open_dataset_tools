@@ -5,6 +5,19 @@ import copy
 import aws_utils
 
 
+def _get_tmp_dir():
+    """
+    Check the validity of and return the name of the tmp/
+    sub directory of the directory containing metadata_utils.py
+    """
+    tmp_dir = os.path.dirname(os.path.abspath(__file__))
+    tmp_dir = os.path.join(tmp_dir, 'tmp')
+
+    if os.path.exists(tmp_dir) and not os.path.isdir(tmp_dir):
+        raise RuntimeError('\n%s\nexists but is not a dir' % tmp_dir)
+
+    return tmp_dir
+
 def _get_aws_md5(fname, session, bucket_name='allen-mouse-brain-atlas'):
     """
     Get and return the md5 checksum of a file in AWS
@@ -33,20 +46,6 @@ def _compare_md5(fname, target):
         for line in in_file:
             md5_obj.update(line)
     return md5_obj.hexdigest()==target
-
-
-def _get_tmp_dir():
-    """
-    Check the validity of and return the name of the tmp/
-    sub directory of the directory containing metadata_utils.py
-    """
-    tmp_dir = os.path.dirname(os.path.abspath(__file__))
-    tmp_dir = os.path.join(tmp_dir, 'tmp')
-
-    if os.path.exists(tmp_dir) and not os.path.isdir(tmp_dir):
-        raise RuntimeError('\n%s\nexists but is not a dir' % tmp_dir)
-
-    return tmp_dir
 
 
 def _need_to_download(aws_key, local_filename, session,
