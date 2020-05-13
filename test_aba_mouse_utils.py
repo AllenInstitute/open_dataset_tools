@@ -539,6 +539,34 @@ class SectionDataSetTestCase(unittest.TestCase):
 
         self.assertEqual(dataset.tissue_indices, control)
 
+    def test_many_sub_images(self):
+        """
+        Test that metadata is properly loaded when one TIFF contains
+        many sub-images
+        """
+        section_id = 100055044
+        tmp_dir = tempfile.mkdtemp(dir='test_tmp')
+        dataset = mouse_utils.SectionDataSet(section_id,
+                                             session=self.session,
+                                             tmp_dir=tmp_dir)
+
+        control_name = 'test_data/section_data_set_100055044_metadata.json'
+        with open(control_name, 'rb') as in_file:
+            control_metadata = json.load(in_file)
+
+        for control_img in control_metadata['section_images']:
+            tissue_index = control_img['section_number']
+            subimg_id = control_img['id']
+            test = dataset.image_metadata_from_tissue_index(tissue_index)
+            self.assertEqual(control_img, test)
+            test = dataset.image_metadata_from_sub_image(subimg_id)
+            self.assertEqual(control_img, test)
+
+        fname_list = os.listdir(tmp_dir)
+        for fname in fname_list:
+            os.unlink(os.path.join(tmp_dir, fname))
+        shutil.rmtree(tmp_dir)
+
 
 if __name__ == "__main__":
     unittest.main()
