@@ -239,17 +239,17 @@ class SectionDataSet(object):
         # remove section images and construct a dict keyed on image name
         tmp_section_images = self.metadata.pop('section_images')
 
-        self.tissue_index_to_section_image = {}
+        self.tissue_index_to_section_img = {}
         self.subimg_to_tissue_index = {}
         for img in tmp_section_images:
             tissue_index = img['section_number']
-            assert tissue_index not in self.tissue_index_to_section_image
-            self.tissue_index_to_section_image[tissue_index] = img
+            assert tissue_index not in self.tissue_index_to_section_img
+            self.tissue_index_to_section_img[tissue_index] = img
             subimg_id = img['id']
             assert subimg_id not in self.subimg_to_tissue_index
             self.subimg_to_tissue_index[subimg_id] = tissue_index
 
-        self._tissue_indices = list(self.tissue_index_to_section_image.keys())
+        self._tissue_indices = list(self.tissue_index_to_section_img.keys())
         self._tissue_indices.sort()
         self._subimg_ids = list(self.subimg_to_tissue_index.keys())
         self._subimg_ids.sort()
@@ -277,13 +277,13 @@ class SectionDataSet(object):
 
         Returns None if an invalid tissue_index is specified
         """
-        if tissue_index not in self.tissue_index_to_section_image:
+        if tissue_index not in self.tissue_index_to_section_img:
             warnings.warn("tissue_index %d does not "
                           "exist in section_data_set_%d" %
                           (tissue_index, self.section_id))
             return None
 
-        return copy.deepcopy(self.tissue_index_to_section_image[tissue_index])
+        return copy.deepcopy(self.tissue_index_to_section_img[tissue_index])
 
     def image_metadata_from_sub_image(self, sub_image):
         """
@@ -376,7 +376,7 @@ class SectionDataSet(object):
         True if the TIFF was successfully downloaded to local_filename;
         False if not
         """
-        if tissue_index not in self.tissue_index_to_section_image:
+        if tissue_index not in self.tissue_index_to_section_img:
             warnings.warn("tissue_index %d does not exist in "
                           "section_data_set_%d" %
                           (tissue_index, self.section_id))
