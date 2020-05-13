@@ -239,17 +239,19 @@ class SectionDataSet(object):
         # remove section images and construct a dict keyed on image name
         tmp_section_images = self.metadata.pop('section_images')
 
-        self.section_images = {}
-        self.tissue_index_to_img = {}
-        self.subimg_to_img = {}
+        self.tissue_index_to_section_image = {}
+        self.subimg_to_tissue_index = {}
         for img in tmp_section_images:
-            fname = img['image_file_name']
-            self.section_images[fname] = img
-            self.tissue_index_to_img[img['section_number']] = fname
-            self.subimg_to_img[img['id']] = fname
-        self._tissue_indices = list(self.tissue_index_to_img.keys())
+            tissue_index = img['section_number']
+            assert tissue_index not in self.tissue_index_to_section_image
+            self.tissue_index_to_section_image[tissue_index] = img
+            subimg_id = img['id']
+            assert subimg_id not in self.subimg_to_tissue_index
+            self.subimg_to_tissue_index[subimg_id] = tissue_index
+
+        self._tissue_indices = list(self.tissue_index_to_section_image.keys())
         self._tissue_indices.sort()
-        self._subimg_ids = list(self.subimg_to_img.keys())
+        self._subimg_ids = list(self.subimg_to_tissue_index.keys())
         self._subimg_ids.sort()
 
     @property
@@ -275,14 +277,13 @@ class SectionDataSet(object):
 
         Returns None if an invalid tissue_index is specified
         """
-        if tissue_index not in self.tissue_index_to_img:
+        if tissue_index not in self.tissue_index_to_section_image:
             warnings.warn("tissue_index %d does not "
                           "exist in section_data_set_%d" %
                           (tissue_index, self.section_id))
             return None
 
-        fname = self.tissue_index_to_img[tissue_index]
-        return copy.deepcopy(self.section_images[fname])
+        return copy.deepcopy(self.tissue_index_to_section_image[tissue_index])
 
     def image_metadata_from_sub_image(self, sub_image):
         """
@@ -291,23 +292,24 @@ class SectionDataSet(object):
 
         Returns None if an invalid subimage ID is specified
         """
-        if sub_image not in self.subimg_to_img:
+        if sub_image not in self.subimg_to_tissue_index:
             warnings.warn("sub_image %d does not exist "
                           "in section_data_set_%d" %
                           (sub_image, self.section_id))
 
             return None
 
-        fname = self.subimg_to_img[sub_image]
-        return copy.deepcopy(self.section_images[fname])
+        tissue_index = self.subimg_to_tissue_index[sub_image]
+        return self.image_metadata_from_tissue_index(tissue_index)
 
-    def _download_img(self, fname, downsample, local_filename, clobber=False):
+    def _download_img(self, tissue_index, downsample, local_filename, clobber=False):
         """
         Download the TIFF file specified by fname and downsample
 
         Parameters
         ----------
-        fname is the base name of the TIFF file to download
+        tissue_index is the tissue index of the sub-image whose TIFF file
+        we are to download
 
         downsample is an integer denoting the downsampling tier to download
 
@@ -331,8 +333,11 @@ class SectionDataSet(object):
                               "clobber=True to overwrite" % local_filename)
                 return False
 
+        img_metadata = self.image_metadata_from_tissue_index(tissue_index)
+        fname = img_metadata['image_file_name']
+
         downsample_key = 'downsample_%d' % downsample
-        if downsample_key not in self.section_images[fname]['downsampling'].keys():
+        if downsample_key not in img_metadata['downsampling'].keys():
             warnings.warn("%d is not a valid downsampling tier for %s"
                           % (downsample, fname))
             return False
@@ -371,13 +376,12 @@ class SectionDataSet(object):
         True if the TIFF was successfully downloaded to local_filename;
         False if not
         """
-        if tissue_index not in self.tissue_index_to_img:
+        if tissue_index not in self.tissue_index_to_section_image:
             warnings.warn("tissue_index %d does not exist in "
                           "section_data_set_%d" %
                           (tissue_index, self.section_id))
             return False
-        fname = self.tissue_index_to_img[tissue_index]
-        return self._download_img(fname, downsample, local_filename, clobber=clobber)
+        return self._download_img(tissue_index, downsample, local_filename, clobber=clobber)
 
     def download_image_from_sub_image(self, sub_image, downsample,
                                       local_filename, clobber=False):
@@ -405,10 +409,11 @@ class SectionDataSet(object):
         True if the TIFF was successfully downloaded to local_filename;
         False if not
         """
-        if sub_image not in self.subimg_to_img:
+        if sub_image not in self.subimg_to_tissue_index:
             warnings.warn("sub_image %d does not exist "
                           "in section_data_set_%d" %
                           (sub_image, self.section_id))
             return False
-        fname = self.subimg_to_img[sub_image]
-        return self._download_img(fname, downsample, local_filename, clobber=clobber)
+        tissue_index = self.subimg_to_tissue_index[sub_image]
+        return self.download_image_from_tissue_index(tissue_index, downsample,
+                                                     local_filename, clobber=clobber)
