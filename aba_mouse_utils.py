@@ -1,4 +1,6 @@
 import os
+import PIL.Image
+import tempfile
 import hashlib
 import json
 import copy
@@ -343,10 +345,30 @@ class SectionDataSet(object):
             return False
         aws_key = 'section_data_set_%d/%s/%s' % (self.section_id, downsample_key, fname)
 
+        # Download the TIFF into a temporary location
+        # then use PIL to crop the image to only include
+        # the specified section of brain.
+
+        tmp_filename = tempfile.mkstemp(dir=self.tmp_dir,
+                                        prefix='tmp_before_crop_',
+                                        suffix='.tiff')[1]
+
         s3 = self.session.client('s3')
         s3.download_file(Bucket='allen-mouse-brain-atlas',
                          Key=aws_key,
-                         Filename=local_filename)
+                         Filename=tmp_filename)
+
+        img = PIL.Image.open(tmp_filename)
+        tier_metadata = img_metadata['downsampling'][downsample_key]
+        x0 = tier_metadata['x']
+        y0 = tier_metadata['y']
+        x1 = x0 + tier_metadata['width']
+        y1 = y0 + tier_metadata['height']
+        cropped_img = img.crop((x0, y0, x1, y1))
+        cropped_img.save(local_filename)
+
+        if os.path.exists(tmp_filename):
+            os.unlink(tmp_filename)
 
         return True
 
