@@ -443,3 +443,25 @@ class SectionDataSet(object):
         tissue_index = self.subimg_to_tissue_index[sub_image]
         return self.download_image_from_tissue_index(tissue_index, downsample,
                                                      local_filename, clobber=clobber)
+
+    def section_url(self):
+        """
+        Return the URL for the brain-map.org viewer for this SectionDataSet
+        """
+        return "http://mouse.brain-map.org/experiment/show/{id}".format(id=self.section_id)
+
+    def sub_image_url(self, sub_image_id):
+        """
+        Return URL for a high quality image of a specific sub-image,
+        specified by sub_image_id
+        """
+        base = "http://mouse.brain-map.org/experiment/siv?id={sect}&imageId={img}&initImage=ish"
+        return base.format(sect=self.section_id, img=sub_image_id)
+
+    def tissue_index_url(self, tissue_index):
+        """
+        Return URL for a high quality image of a specific sub-image,
+        specified by tissued_index
+        """
+        sub_img = self.tissue_index_to_subimg[tissue_index]
+        return self.sub_image_url(sub_img)
