@@ -244,6 +244,7 @@ class SectionDataSet(object):
 
         self.tissue_index_to_section_img = {}
         self.subimg_to_tissue_index = {}
+        self.tissue_index_to_subimg = {}
         for img in tmp_section_images:
             tissue_index = img['section_number']
             assert tissue_index not in self.tissue_index_to_section_img
@@ -251,6 +252,8 @@ class SectionDataSet(object):
             subimg_id = img['id']
             assert subimg_id not in self.subimg_to_tissue_index
             self.subimg_to_tissue_index[subimg_id] = tissue_index
+            assert tissue_index not in self.tissue_index_to_subimg
+            self.tissue_index_to_subimg[tissue_index] = subimg_id
 
         self._tissue_indices = list(self.tissue_index_to_section_img.keys())
         self._tissue_indices.sort()
