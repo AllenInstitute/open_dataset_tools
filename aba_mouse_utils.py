@@ -238,7 +238,8 @@ class SectionDataSet(object):
         self.metadata = get_section_metadata(section_id, session=session,
                                              tmp_dir=self.tmp_dir)
 
-        # remove section images and construct a dict keyed on image name
+        # remove section images and construct dicts keyed on
+        # tissue_index and sub_image_id
         tmp_section_images = self.metadata.pop('section_images')
 
         self.tissue_index_to_section_img = {}
