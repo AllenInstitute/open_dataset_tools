@@ -17,7 +17,7 @@ to interface with AWS S3. In order to use boto3, you will need to have valid
 AWS credentials stored in a csv file as discussed in at the top of the example
 Jupyter notebook.
 
-*Note:* If run without modification, the helper functions provided in this
+**Note:** If run without modification, the helper functions provided in this
 module will download images into the ```tmp/``` directory in this repository.
 The functions are generally smart enough to not download something twice,
 however, they will not delete unused data. If you find disk space filling
