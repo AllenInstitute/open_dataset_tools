@@ -1,4 +1,9 @@
 import os
+import sys
+
+this_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(this_dir.replace('tests',''))
+
 import hashlib
 import aws_utils
 import aba_mouse_utils as mouse_utils
@@ -15,7 +20,9 @@ class AWSUtilsTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.tmp_dir = tempfile.mkdtemp(dir='test_tmp')
+        dir_name = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'test_tmp')
+        cls.tmp_dir = tempfile.mkdtemp(dir=dir_name)
 
     @classmethod
     def tearDownClass(cls):
@@ -93,7 +100,8 @@ class MetadataTestCase(unittest.TestCase):
         # https://github.com/boto/boto3/issues/454#issuecomment-380900404
         warnings.filterwarnings("ignore", category=ResourceWarning,
                                 message='unclosed <ssl.SSLSocket')
-        cls.tmp_dir = 'test_tmp'
+        cls.tmp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   'test_tmp')
         cls.session = aws_utils.get_boto3_session()
 
     def get_tmp_dir(self):
@@ -117,7 +125,9 @@ class MetadataTestCase(unittest.TestCase):
         """
         this_dir = os.path.dirname(os.path.abspath(__file__))
         tmp_dir = mouse_utils._get_tmp_dir()
-        self.assertEqual(tmp_dir, os.path.join(this_dir, 'tmp'))
+        mod_dir = os.path.dirname(os.path.abspath(__file__))
+        mod_dir = mod_dir.replace('tests','')
+        self.assertEqual(tmp_dir, os.path.join(mod_dir, 'tmp'))
 
     def test_atlas_metadata(self):
         """
@@ -213,7 +223,9 @@ class SectionDataSetTestCase(unittest.TestCase):
         # https://github.com/boto/boto3/issues/454#issuecomment-380900404
         warnings.filterwarnings("ignore", category=ResourceWarning,
                                 message='unclosed <ssl.SSLSocket')
-        cls.tmp_dir = tempfile.mkdtemp(dir='test_tmp')
+        dir_name = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'test_tmp')
+        cls.tmp_dir = tempfile.mkdtemp(dir=dir_name)
         cls.session = aws_utils.get_boto3_session()
         cls.example_section_id = 275693
         mouse_utils.get_section_metadata(cls.example_section_id,
@@ -231,14 +243,15 @@ class SectionDataSetTestCase(unittest.TestCase):
         """
         Try loading the metadata by tissue_index.
         Compare to a json dict of the expected result that was
-        copied to test_data/ by hand.
+        copied to tests/test_data/ by hand.
         """
         dataset = mouse_utils.SectionDataSet(self.example_section_id,
                                              session=self.session,
                                              tmp_dir=self.tmp_dir)
 
         metadata = dataset.image_metadata_from_tissue_index(154)
-        control_file = os.path.join('test_data',
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        control_file = os.path.join(os.path.join(this_dir, 'test_data'),
                                     'example_metadata_tissue_154.json')
         with open(control_file, 'rb') as in_file:
             control_metadata = json.load(in_file)
@@ -255,14 +268,15 @@ class SectionDataSetTestCase(unittest.TestCase):
         """
         Try loading the metadata by sub_image_id.
         Compare to a json dict of the expected result that was
-        copied to test_data/ by hand.
+        copied to tests/test_data/ by hand.
         """
         dataset = mouse_utils.SectionDataSet(self.example_section_id,
                                              session=self.session,
                                              tmp_dir=self.tmp_dir)
 
         metadata = dataset.image_metadata_from_sub_image(102000022)
-        control_file = os.path.join('test_data',
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        control_file = os.path.join(os.path.join(this_dir, 'test_data'),
                                     'example_metadata_id_102000022.json')
         with open(control_file, 'rb') as in_file:
             control_metadata = json.load(in_file)
@@ -545,12 +559,16 @@ class SectionDataSetTestCase(unittest.TestCase):
         many sub-images
         """
         section_id = 100055044
-        tmp_dir = tempfile.mkdtemp(dir='test_tmp')
+        dir_name = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'test_tmp')
+        tmp_dir = tempfile.mkdtemp(dir=dir_name)
         dataset = mouse_utils.SectionDataSet(section_id,
                                              session=self.session,
                                              tmp_dir=tmp_dir)
 
+        this_dir = os.path.dirname(os.path.abspath(__file__))
         control_name = 'test_data/section_data_set_100055044_metadata.json'
+        control_name = os.path.join(this_dir, control_name)
         with open(control_name, 'rb') as in_file:
             control_metadata = json.load(in_file)
 
