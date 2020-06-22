@@ -4,6 +4,7 @@ This repository contains code to support the download of images and metadata
 from the
 [Allen Mouse Brain Atlas](https://registry.opendata.aws/allen-mouse-brain-atlas/)
 hosted on AWS.
+
 The Jupyter notebook Visualizing_Images_from_Allen_Mouse_Brain_Atlas.ipynb
 demonstrates all of the helper functions necessary to download and view
 images from the atlas. It also demonstrates functions for downloading
@@ -15,6 +16,12 @@ This module uses the open source [boto3](https://github.com/boto/boto3) API
 to interface with AWS S3. In order to use boto3, you will need to have valid
 AWS credentials stored in a csv file as discussed in at the top of the example
 Jupyter notebook.
+
+*Note:* If run without modification, the helper functions provided in this
+module will download images into the ```tmp/``` directory in this repository.
+The functions are generally smart enough to not download something twice,
+however, they will not delete unused data. If you find disk space filling
+up, that is a place to look.
 
 # Level of Support
 
