@@ -230,7 +230,10 @@ class SectionDataSet(object):
         files. If None, will use the tmp/ sub-directory of the
         directory containing metadata_utils.py. (Default:None)
         """
-        self.tmp_dir=tmp_dir
+        if tmp_dir is None:
+            tmp_dir = _get_tmp_dir()
+        self.tmp_dir = tmp_dir
+
         self.section_id = section_id
         if session is None:
             session = aws_utils.get_boto3_session()
