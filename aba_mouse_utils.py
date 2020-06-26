@@ -356,9 +356,12 @@ class SectionDataSet(object):
         # then use PIL to crop the image to only include
         # the specified section of brain.
 
-        tmp_filename = tempfile.mkstemp(dir=self.tmp_dir,
-                                        prefix='tmp_before_crop_',
-                                        suffix='.tiff')[1]
+        tmp_d = tempfile.mkstemp(dir=self.tmp_dir,
+                                 prefix='tmp_before_crop_',
+                                 suffix='.tiff')
+
+        os.close(tmp_d[0])
+        tmp_filename = tmp_d[1]
 
         s3 = self.session.client('s3')
         s3.download_file(Bucket='allen-mouse-brain-atlas',

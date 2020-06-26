@@ -59,7 +59,9 @@ class AWSUtilsTestCase(unittest.TestCase):
         Test what happens when the expected values are not in the
         accessKeys.csv file
         """
-        fname = tempfile.mkstemp(dir=self.tmp_dir, suffix='.csv')[1]
+        tmp_d = tempfile.mkstemp(dir=self.tmp_dir, suffix='.csv')
+        os.close(tmp_d[0])
+        fname = tmp_d[1]
         with open(fname, 'w') as out_file:
             out_file.write('a,b,c,d\n')
             out_file.write('1,2,3,4\n')
@@ -78,7 +80,9 @@ class AWSUtilsTestCase(unittest.TestCase):
         """
         Test reading keys from a properly formatted file
         """
-        fname = tempfile.mkstemp(dir=self.tmp_dir, suffix='.csv')[1]
+        tmp_d = tempfile.mkstemp(dir=self.tmp_dir, suffix='.csv')
+        os.close(tmp_d[0])
+        fname = tmp_d[1]
         key_id = 'meringue'
         secret_key = 'blueberry'
         with open(fname, 'w') as out_file:
