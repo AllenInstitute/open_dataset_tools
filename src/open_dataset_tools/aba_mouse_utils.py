@@ -1,34 +1,23 @@
 import os
+from typing import List, Union
+from pathlib import Path
 import PIL.Image
 import tempfile
 import hashlib
 import json
 import copy
 import warnings
-import aws_utils
+
+from open_dataset_tools.aws_utils import get_public_boto3_client
 
 
-def _get_tmp_dir():
-    """
-    Check the validity of and return the name of the tmp/
-    sub directory of the directory containing metadata_utils.py
-    """
-    tmp_dir = os.path.dirname(os.path.abspath(__file__))
-    tmp_dir = os.path.join(tmp_dir, 'tmp')
-
-    if os.path.exists(tmp_dir) and not os.path.isdir(tmp_dir):
-        raise RuntimeError('\n%s\nexists but is not a dir' % tmp_dir)
-
-    return tmp_dir
-
-def _get_aws_md5(fname, session, bucket_name='allen-mouse-brain-atlas'):
+def _get_aws_md5(fname: str, s3_client, bucket_name='allen-mouse-brain-atlas'):
     """
     Get and return the md5 checksum of a file in AWS
     """
-    s3 = session.client('s3')
     # get the md5sum of the section_data_sets.json file
     # to determine if the file must be downloaded
-    obj_list = s3.list_objects(Bucket=bucket_name,
+    obj_list = s3_client.list_objects(Bucket=bucket_name,
                                Prefix=fname)['Contents']
     if len(obj_list) != 1:
         msg = '\nquerying bucket for %s ' % fname
@@ -38,7 +27,7 @@ def _get_aws_md5(fname, session, bucket_name='allen-mouse-brain-atlas'):
     return obj_list[0]['ETag'].replace('"','')
 
 
-def _compare_md5(fname, target):
+def _compare_md5(fname: Path, target):
     """
     Compare the md5 checksum of the file specified by fname to the
     string specified by target. Return boolean result indicating if
@@ -51,7 +40,7 @@ def _compare_md5(fname, target):
     return md5_obj.hexdigest()==target
 
 
-def _need_to_download(aws_key, local_filename, session,
+def _need_to_download(aws_key: str, local_filename: Path, s3_client,
                       bucket_name='allen-mouse-brain-atlas'):
     """
     Check whether or not aws_key needs to be downloaded to keep
@@ -63,7 +52,7 @@ def _need_to_download(aws_key, local_filename, session,
 
     local_filename is the name of the local corresponding to aws_key
 
-    session is a boto3 session
+    s3_client is a boto3 client for the AWS S3 service
 
     bucket_name is the name of the S3 bucket where the file resides
     (Default: 'allen-mouse-brain-atlas')
@@ -74,20 +63,22 @@ def _need_to_download(aws_key, local_filename, session,
 
     A string containing the md5checksum of the file
     """
-    target_md5 = _get_aws_md5(aws_key, session, bucket_name=bucket_name)
+    target_md5 = _get_aws_md5(aws_key, s3_client, bucket_name=bucket_name)
     must_download = False
-    if not os.path.exists(local_filename):
+    if not local_filename.exists():
         must_download = True
     else:
-        if not os.path.isfile(local_filename):
-            raise RuntimeError('\n%s\nexists but is not a file' % local_filename)
+        if not local_filename.is_file():
+            raise RuntimeError(
+                '\n%s\nexists but is not a file' % local_filename
+            )
 
         if not _compare_md5(local_filename, target_md5):
             must_download = True
     return must_download, target_md5
 
 
-def _get_aws_file(aws_key, local_filename, session,
+def _get_aws_file(aws_key, local_filename: Path, s3_client,
                   bucket_name='allen-mouse-brain-atlas'):
     """
     Download the AWS file specified by bucket_name:aws_key to
@@ -99,7 +90,7 @@ def _get_aws_file(aws_key, local_filename, session,
 
     local_filename is the name of the local corresponding to aws_key
 
-    session is a boto3 session
+    s3_client is a boto3 client for the AWS S3 service
 
     bucket_name is the name of the S3 bucket where the file resides
     (Default: 'allen-mouse-brain-atlas')
@@ -108,16 +99,17 @@ def _get_aws_file(aws_key, local_filename, session,
     -------
     None; just download the file to the specified local_filename
     """
-    (must_download,
-         target_md5) = _need_to_download(aws_key, local_filename, session,
-                                         bucket_name=bucket_name)
+    (must_download, target_md5) = _need_to_download(
+        aws_key, local_filename, s3_client,bucket_name=bucket_name
+    )
 
     if must_download:
-        print('downloading %s' % aws_key)
-        s3 = session.client('s3')
-        s3.download_file(Bucket=bucket_name,
-                         Key=aws_key,
-                         Filename=local_filename)
+        print('Downloading %s' % aws_key)
+        s3_client.download_file(
+            Bucket=bucket_name,
+            Key=aws_key,
+            Filename=str(local_filename)
+        )
 
         if not _compare_md5(local_filename, target_md5):
             msg = '\nDownloaded section_data_sets.json; '
@@ -127,22 +119,85 @@ def _get_aws_file(aws_key, local_filename, session,
     return None
 
 
-def get_atlas_metadata(session=None, tmp_dir=None):
-    """
-    Load the metadata for the entire atlas into memory.
-    If you have not already downloaded this file, it will
-    be downloaded into the tmp/ sub-directory of the directory
-    containing metadata_utils.py
+def download_s3_metadata_file(
+    download_directory: Union[str, Path],
+    downloaded_local_fname: str,
+    metadata_s3_key: str,
+    s3_client = None,
+    bucket_name: str = "allen-mouse-brain-atlas"
+) -> Union[dict, List[dict]]:
+    """Download and parse a metadata *.json file for the Allen Mouse Brain
+    Atlas dataset.
 
     Parameters
     ----------
-    session is a boto3.Session. If None, this method will try
-    to open a session using credentials found in accessKeys.csv
+    download_directory : Union[str, Path]
+        The desired local directory path to save downloaded metadata. If the
+        provided directory does not exist, it and any necessary parent
+        directories will be created automatically.
+    downloaded_local_fname : str
+        The file name that the downloaded metadata should have.
+    metadata_s3_key : str
+        The S3 Key used to select which file to downloaded.
+    s3_client :
+        A boto3.Client of the S3 variety. If None, an s3 client with
+        anonymous credentials will be automatically created.
+    bucket_name : str, optional
+        The name of the bucket to download the metadata file from,
+        by default "allen-mouse-brain-atlas"
 
-    tmp_dir is the directory to which temporary data should
-    be downloaded. If None, then the data will be downloaded
-    tmp/ in the directory where metadata_utils.py is
-    (Default: None).
+    Returns
+    -------
+    Union[dict, List[dict]]
+        The parsed contents of a *.json file. Can be a list of dicts or
+        just a dict.
+    """
+    if type(download_directory) is str:
+        download_directory = Path(download_directory).resolve()
+
+    if not download_directory.exists():
+        download_directory.mkdir(parents=True, exist_ok=True)
+
+    if s3_client is None:
+        s3_client = get_public_boto3_client()
+
+    local_metadata_path = download_directory / downloaded_local_fname
+
+    _get_aws_file(
+        aws_key=metadata_s3_key,
+        local_filename=local_metadata_path,
+        s3_client=s3_client,
+        bucket_name=bucket_name
+    )
+
+    with local_metadata_path.open('rb') as f:
+        metadata = json.load(f)
+
+    return metadata
+
+
+def get_atlas_metadata(
+    download_directory: Union[str, Path],
+    s3_client=None,
+    bucket_name: str = 'allen-mouse-brain-atlas'
+) -> List[dict]:
+    """
+    Load the metadata for the entire atlas into memory.
+    If you have not already downloaded this file, it will
+    be downloaded to the specified `download_directory`
+
+    Parameters
+    ----------
+    s3_client
+        A boto3.Client of the S3 variety. If None, this function will
+        try to create an s3 client with anonymous credentials which is
+        sufficient to access public AWS services
+    download_directory : Union[str, Path]
+        The desired local directory path to save downloaded metadata. If the
+        provided directory does not exist, it and any necessary parent
+        directories will be created automatically.
+    bucket_name : str
+        The name of the S3 bucket to download metadata from.
 
     Returns
     -------
@@ -150,96 +205,99 @@ def get_atlas_metadata(session=None, tmp_dir=None):
     This is the result of running json.load on section_data_sets.json
     """
 
-    if tmp_dir is None:
-        tmp_dir = _get_tmp_dir()
-
-    file_name = os.path.join(tmp_dir, 'section_data_sets.json')
-
-    if session is None:
-        session = aws_utils.get_boto3_session()
-
-    bucket_name = 'allen-mouse-brain-atlas'
-    _get_aws_file('section_data_sets.json', file_name, session,
-                  bucket_name=bucket_name)
-
-    with open(file_name, 'rb') as in_file:
-        metadata = json.load(in_file)
+    metadata = download_s3_metadata_file(
+        download_directory=download_directory,
+        metadata_s3_key="section_data_sets.json",
+        downloaded_local_fname="section_data_sets.json",
+        bucket_name=bucket_name
+    )
 
     return metadata
 
 
-def get_section_metadata(section_id, session=None, tmp_dir=None):
+def get_section_metadata(
+        section_id: int,
+        download_directory: Union[str, Path],
+        s3_client=None,
+        bucket_name: str = 'allen-mouse-brain-atlas'
+    ) -> dict:
     """
     Get the dict representing the metadata for a specific image series.
 
     Parameters
     ----------
-    section_id is an integer representing the section whose metadata should be
-    loaded
-
-    session is a boto3.Session. If None, this method will try to create one
-    looking for credentialsi n accessKeys.csv
-
-    tmp_dir is the directory to which temporary data should
-    be downloaded. If None, then the data will be downloaded
-    tmp/ in the directory where metadata_utils.py is
-    (Default: None).
+    section_id : int
+        An integer representing the section whose metadata should be loaded
+    s3_client
+        A boto3.Client of the S3 variety. If None, this function will
+        try to create an s3 client with anonymous credentials which is
+        sufficient to access public AWS services
+    download_directory : Union[str, Path]
+        The desired local directory path to save downloaded metadata. If the
+        provided directory does not exist, it and any necessary parent
+        directories will be created automatically.
+    bucket_name : str
+        The name of the S3 bucket to download metadata from.
 
     Returns
     -------
-    A dict containing the metadata for the specified Session.
+    A dict containing the metadata for the specified section_id.
     """
-    if tmp_dir is None:
-        tmp_dir = _get_tmp_dir()
 
-    if session is None:
-        session = aws_utils.get_boto3_session()
+    metadata_s3_key = f"section_data_set_{section_id}/section_data_set.json"
+    local_fname = f"section_data_set_{section_id}_metadata.json"
 
-    file_name = os.path.join(tmp_dir,
-                            'section_data_set_%d_metadata.json' % section_id)
-
-    aws_key = 'section_data_set_%d/section_data_set.json' % section_id
-
-    _get_aws_file(aws_key, file_name, session,
-                  bucket_name='allen-mouse-brain-atlas')
-
-    with open(file_name, 'rb') as in_file:
-        metadata = json.load(in_file)
+    metadata = download_s3_metadata_file(
+        download_directory=download_directory,
+        metadata_s3_key=metadata_s3_key,
+        downloaded_local_fname=local_fname,
+        bucket_name=bucket_name
+    )
 
     return metadata
 
 
 class SectionDataSet(object):
 
-    def __init__(self, section_id, session=None, tmp_dir=None):
+    def __init__(
+        self,
+        section_id: int,
+        download_directory: Union[str, Path],
+        s3_client=None
+    ):
         """
         Load and store the metadata for the section_data_set specified
-        by section_id. Use the boto3 session provided as a kwarg, or
-        open a session using credentials found in accessKeys.csv
+        by section_id. Use the boto3 s3_client provided as a kwarg.
 
         Parameters
         ----------
-        section_id is an int indicating which section_data_set to
-        load
-
-        session is a boto3 session. If None, will open a session
-        using the credentials found in accessKeys.csv in the
-        same directory as metadata_utils.py. (Default: None)
-
-        tmp_dir is the directory in which to store downloaded *.json
-        files. If None, will use the tmp/ sub-directory of the
-        directory containing metadata_utils.py. (Default:None)
+        section_id :
+            An int indicating which section_data_set to load
+        download_directory : Union[str, Path]
+            The desired local directory path to save downloaded metadata. If
+            the provided directory does not exist, it and any necessary parent
+            directories will be created automatically.
+        s3_client :
+            A boto3.Client of the S3 variety. If None, an s3 client with
+            anonymous credentials will be automatically created.
         """
-        if tmp_dir is None:
-            tmp_dir = _get_tmp_dir()
-        self.tmp_dir = tmp_dir
 
+        if type(download_directory) is str:
+            download_directory = Path(download_directory).resolve()
+
+        if not download_directory.exists():
+            download_directory.mkdir(parents=True, exist_ok=True)
+
+        if s3_client is None:
+            s3_client = get_public_boto3_client()
+
+        self.download_dir = download_directory
         self.section_id = section_id
-        if session is None:
-            session = aws_utils.get_boto3_session()
-        self.session = session
-        self.metadata = get_section_metadata(section_id, session=session,
-                                             tmp_dir=self.tmp_dir)
+        self.s3_client = s3_client
+        self.metadata = get_section_metadata(
+            section_id=section_id,
+            download_directory=download_directory
+        )
 
         # remove section images and construct dicts keyed on
         # tissue_index and sub_image_id
@@ -311,7 +369,9 @@ class SectionDataSet(object):
         tissue_index = self.subimg_to_tissue_index[sub_image]
         return self.image_metadata_from_tissue_index(tissue_index)
 
-    def _download_img(self, tissue_index, downsample, local_filename, clobber=False):
+    def _download_img(
+        self, tissue_index, downsample, local_filename, clobber=False
+    ):
         """
         Download the TIFF file specified by fname and downsample
 
@@ -335,7 +395,9 @@ class SectionDataSet(object):
 
         if os.path.exists(local_filename):
             if not os.path.isfile(local_filename):
-                warnings.warn('%s already exists but is not a file' % local_filename)
+                warnings.warn(
+                    '%s already exists but is not a file' % local_filename
+                )
                 return False
             if not clobber:
                 warnings.warn("%s already exists; re-run with "
@@ -350,23 +412,26 @@ class SectionDataSet(object):
             warnings.warn("%d is not a valid downsampling tier for %s"
                           % (downsample, fname))
             return False
-        aws_key = 'section_data_set_%d/%s/%s' % (self.section_id, downsample_key, fname)
+        aws_key = 'section_data_set_%d/%s/%s' % (
+            self.section_id, downsample_key, fname
+        )
 
         # Download the TIFF into a temporary location
         # then use PIL to crop the image to only include
         # the specified section of brain.
 
-        tmp_d = tempfile.mkstemp(dir=self.tmp_dir,
+        tmp_d = tempfile.mkstemp(dir=self.download_dir,
                                  prefix='tmp_before_crop_',
                                  suffix='.tiff')
 
         os.close(tmp_d[0])
         tmp_filename = tmp_d[1]
 
-        s3 = self.session.client('s3')
-        s3.download_file(Bucket='allen-mouse-brain-atlas',
-                         Key=aws_key,
-                         Filename=tmp_filename)
+        self.s3_client.download_file(
+            Bucket='allen-mouse-brain-atlas',
+            Key=aws_key,
+            Filename=tmp_filename
+        )
 
         img = PIL.Image.open(tmp_filename)
         tier_metadata = img_metadata['downsampling'][downsample_key]
@@ -413,7 +478,9 @@ class SectionDataSet(object):
                           "section_data_set_%d" %
                           (tissue_index, self.section_id))
             return False
-        return self._download_img(tissue_index, downsample, local_filename, clobber=clobber)
+        return self._download_img(
+            tissue_index, downsample, local_filename, clobber=clobber
+        )
 
     def download_image_from_sub_image(self, sub_image, downsample,
                                       local_filename, clobber=False):
@@ -447,8 +514,9 @@ class SectionDataSet(object):
                           (sub_image, self.section_id))
             return False
         tissue_index = self.subimg_to_tissue_index[sub_image]
-        return self.download_image_from_tissue_index(tissue_index, downsample,
-                                                     local_filename, clobber=clobber)
+        return self.download_image_from_tissue_index(
+            tissue_index, downsample, local_filename, clobber=clobber
+        )
 
     def section_url(self):
         """
