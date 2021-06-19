@@ -1,19 +1,21 @@
-import os
-from typing import List, Union
+from typing import List, Tuple, Union
 from pathlib import Path
-import PIL.Image
 import tempfile
 import hashlib
 import json
 import copy
 import warnings
 
+import PIL.Image
+
 from open_dataset_tools.aws_utils import get_public_boto3_client
 
 
-def _get_aws_md5(fname: str, s3_client, bucket_name='allen-mouse-brain-atlas'):
+def _get_aws_md5(
+    fname: str, s3_client, bucket_name='allen-mouse-brain-atlas'
+) -> str:
     """
-    Get and return the md5 checksum of a file in AWS
+    Get and return the md5 checksum (str) of a file in AWS
     """
     # get the md5sum of the section_data_sets.json file
     # to determine if the file must be downloaded
@@ -27,7 +29,7 @@ def _get_aws_md5(fname: str, s3_client, bucket_name='allen-mouse-brain-atlas'):
     return obj_list[0]['ETag'].replace('"','')
 
 
-def _compare_md5(fname: Path, target):
+def _compare_md5(fname: Path, target: str) -> bool:
     """
     Compare the md5 checksum of the file specified by fname to the
     string specified by target. Return boolean result indicating if
@@ -37,11 +39,13 @@ def _compare_md5(fname: Path, target):
     with open(fname, 'rb') as in_file:
         for line in in_file:
             md5_obj.update(line)
-    return md5_obj.hexdigest()==target
+    return md5_obj.hexdigest() == target
 
 
-def _need_to_download(aws_key: str, local_filename: Path, s3_client,
-                      bucket_name='allen-mouse-brain-atlas'):
+def _need_to_download(
+    aws_key: str, local_filename: Path, s3_client,
+    bucket_name='allen-mouse-brain-atlas'
+) -> Tuple[bool, str]:
     """
     Check whether or not aws_key needs to be downloaded to keep
     local_filename up-to-date.
@@ -370,7 +374,8 @@ class SectionDataSet(object):
         return self.image_metadata_from_tissue_index(tissue_index)
 
     def _download_img(
-        self, tissue_index, downsample, local_filename, clobber=False
+        self, tissue_index: int, downsample: int,
+        local_savepath: Path, clobber: bool = False
     ):
         """
         Download the TIFF file specified by fname and downsample
@@ -382,26 +387,26 @@ class SectionDataSet(object):
 
         downsample is an integer denoting the downsampling tier to download
 
-        local_filename is the file name where the TIFF file will be saved
+        local_savepath is the file path where the TIFF file will be saved
 
-        clobber is a boolean. If True, overwrite pre-existing local_filename.
-        Otherwise, throw a warning and exit if local_filename already exists
+        clobber is a boolean. If True, overwrite pre-existing local_savepath.
+        Otherwise, throw a warning and exit if local_savepath already exists
 
         Returns
         -------
-        True if the TIFF file was successfully downloaded to local_filename;
+        True if the TIFF file was successfully downloaded to local_savepath;
         False if not.
         """
 
-        if os.path.exists(local_filename):
-            if not os.path.isfile(local_filename):
+        if local_savepath.exists():
+            if not local_savepath.is_file():
                 warnings.warn(
-                    '%s already exists but is not a file' % local_filename
+                    '%s already exists but is not a file' % local_savepath
                 )
                 return False
             if not clobber:
                 warnings.warn("%s already exists; re-run with "
-                              "clobber=True to overwrite" % local_filename)
+                              "clobber=True to overwrite" % local_savepath)
                 return False
 
         img_metadata = self.image_metadata_from_tissue_index(tissue_index)
@@ -420,35 +425,34 @@ class SectionDataSet(object):
         # then use PIL to crop the image to only include
         # the specified section of brain.
 
-        tmp_d = tempfile.mkstemp(dir=self.download_dir,
-                                 prefix='tmp_before_crop_',
-                                 suffix='.tiff')
+        with tempfile.NamedTemporaryFile(
+            mode="w+b",
+            dir=self.download_dir,
+            prefix="tmp_before_crop_",
+            suffix=".tiff"
+        ) as f:
 
-        os.close(tmp_d[0])
-        tmp_filename = tmp_d[1]
+            self.s3_client.download_fileobj(
+                Bucket='allen-mouse-brain-atlas',
+                Key=aws_key,
+                Fileobj=f
+            )
 
-        self.s3_client.download_file(
-            Bucket='allen-mouse-brain-atlas',
-            Key=aws_key,
-            Filename=tmp_filename
-        )
-
-        img = PIL.Image.open(tmp_filename)
-        tier_metadata = img_metadata['downsampling'][downsample_key]
-        x0 = tier_metadata['x']
-        y0 = tier_metadata['y']
-        x1 = x0 + tier_metadata['width']
-        y1 = y0 + tier_metadata['height']
-        cropped_img = img.crop((x0, y0, x1, y1))
-        cropped_img.save(local_filename)
-
-        if os.path.exists(tmp_filename):
-            os.unlink(tmp_filename)
+            img = PIL.Image.open(Path(f.name).resolve())
+            tier_metadata = img_metadata['downsampling'][downsample_key]
+            x0 = tier_metadata['x']
+            y0 = tier_metadata['y']
+            x1 = x0 + tier_metadata['width']
+            y1 = y0 + tier_metadata['height']
+            cropped_img = img.crop((x0, y0, x1, y1))
+            cropped_img.save(str(local_savepath))
 
         return True
 
-    def download_image_from_tissue_index(self, tissue_index, downsample,
-                                         local_filename, clobber=False):
+    def download_image_from_tissue_index(
+        self, tissue_index: int, downsample: int,
+        local_savepath: Path, clobber: bool = False
+    ):
         """
         Download a TIFF file specified by its tissue_index and downsampling
         tier.
@@ -461,16 +465,16 @@ class SectionDataSet(object):
         downsample is an integer denoting the downsampling
         tier of the TIFF to be downloaded
 
-        local_filename is the file name where the downloaded
+        local_savepath is the file path where the downloaded
         TIFF file should be saved
 
         clobber is a boolean. If True, overwrite pre-existing
-        local_filename. If False, raise a warning and exit in
-        the case where local_filename already exists
+        local_savepath. If False, raise a warning and exit in
+        the case where local_savepath already exists
 
         Returns
         -------
-        True if the TIFF was successfully downloaded to local_filename;
+        True if the TIFF was successfully downloaded to local_savepath;
         False if not
         """
         if tissue_index not in self.tissue_index_to_section_img:
@@ -479,11 +483,13 @@ class SectionDataSet(object):
                           (tissue_index, self.section_id))
             return False
         return self._download_img(
-            tissue_index, downsample, local_filename, clobber=clobber
+            tissue_index, downsample, local_savepath, clobber=clobber
         )
 
-    def download_image_from_sub_image(self, sub_image, downsample,
-                                      local_filename, clobber=False):
+    def download_image_from_sub_image(
+        self, sub_image: int, downsample: int,
+        local_savepath: str, clobber: bool = False
+    ):
         """
         Download a TIFF file specified by its sub-image ID and downsampling
         tier.
@@ -496,16 +502,16 @@ class SectionDataSet(object):
         downsample is an integer denoting the downsampling tier of
         the TIFF to be downloaded
 
-        local_filename is the file name where the downloaded TIFF
+        local_savepath is the file name where the downloaded TIFF
         file should be saved
 
         clobber is a boolean. If True, overwrite pre-existing
-        local_filename. If False, raise a warning and exit in the
-        case where local_filename already exists
+        local_savepath. If False, raise a warning and exit in the
+        case where local_savepath already exists
 
         Returns
         -------
-        True if the TIFF was successfully downloaded to local_filename;
+        True if the TIFF was successfully downloaded to local_savepath;
         False if not
         """
         if sub_image not in self.subimg_to_tissue_index:
@@ -515,7 +521,7 @@ class SectionDataSet(object):
             return False
         tissue_index = self.subimg_to_tissue_index[sub_image]
         return self.download_image_from_tissue_index(
-            tissue_index, downsample, local_filename, clobber=clobber
+            tissue_index, downsample, local_savepath, clobber=clobber
         )
 
     def section_url(self):
@@ -524,7 +530,7 @@ class SectionDataSet(object):
         """
         return "http://mouse.brain-map.org/experiment/show/{id}".format(id=self.section_id)
 
-    def sub_image_url(self, sub_image_id):
+    def sub_image_url(self, sub_image_id: int) -> str:
         """
         Return URL for a high quality image of a specific sub-image,
         specified by sub_image_id
@@ -532,7 +538,7 @@ class SectionDataSet(object):
         base = "http://mouse.brain-map.org/experiment/siv?id={sect}&imageId={img}&initImage=ish"
         return base.format(sect=self.section_id, img=sub_image_id)
 
-    def tissue_index_url(self, tissue_index):
+    def tissue_index_url(self, tissue_index: int) -> str:
         """
         Return URL for a high quality image of a specific sub-image,
         specified by tissued_index
