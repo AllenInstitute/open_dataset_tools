@@ -6,9 +6,13 @@ import json
 import copy
 import warnings
 
-import PIL.Image
+from PIL import Image
+from PIL import ImageFile
 
 from open_dataset_tools.aws_utils import get_public_boto3_client
+
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def _get_aws_md5(
@@ -426,7 +430,7 @@ class SectionDataSet(object):
         # the specified section of brain.
 
         with tempfile.NamedTemporaryFile(
-            mode="w+b",
+            mode="wb",
             dir=self.download_dir,
             prefix="tmp_before_crop_",
             suffix=".tiff"
@@ -438,14 +442,16 @@ class SectionDataSet(object):
                 Fileobj=f
             )
 
-            img = PIL.Image.open(Path(f.name).resolve())
             tier_metadata = img_metadata['downsampling'][downsample_key]
             x0 = tier_metadata['x']
             y0 = tier_metadata['y']
             x1 = x0 + tier_metadata['width']
             y1 = y0 + tier_metadata['height']
-            cropped_img = img.crop((x0, y0, x1, y1))
-            cropped_img.save(str(local_savepath))
+
+            with Image.open(Path(f.name).resolve(), "r") as img:
+                cropped_img = img.crop((x0, y0, x1, y1))
+                cropped_img.save(str(local_savepath))
+                cropped_img.close()
 
         return True
 
