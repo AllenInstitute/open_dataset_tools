@@ -54,6 +54,23 @@ def get_section_metadata(client) -> pd.DataFrame:
 
 
 class ImagePromise(object):
+    """The ImagePromise class is intended to defer loading IVY GAP image
+    data until absolutely necessary, because the images take up a potentially
+    huge amount of memory.
+
+    This class is instantiated with image width/height in pixels as well as an
+    s3 object url string which specifies a specific image:
+    s3://allen-ivy-glioblastoma-atlas/{specific_image_resource_key}
+
+    Optionally, a local save directory can also be provided that contains
+    the specific image to have the class load images from local disk
+    instead of downloading from S3.
+
+    When the load() method is called, if only an s3_obj_url was provided
+    then the image repreasented by the ImagePromise will be downloaded from
+    S3. If both s3_obj_url and local_save_directory were provided, then
+    the image will be loaded from local disk.
+    """
 
     def __init__(
         self,
